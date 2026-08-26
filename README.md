@@ -10,6 +10,7 @@
 - 实时 TUI 预览（对话、diff、markdown 渲染模拟）
 - 基于 [官方 theme.json schema](https://opencode.ai/docs/themes/) 的 Ajv 校验，保存即写入 `~/.config/opencode/themes/`
 - 一键应用（写入 `tui.json` 的 `theme` 字段）、DesktopTheme 桌面主题导出（过官方 schema）
+- **主题包导入/导出**：全部主题一键打包为 zip 下载；导入时逐个过 schema 校验，同名跳过、非法忽略
 
 ### 壁纸工作台（M3）
 
@@ -54,6 +55,17 @@ npm start          :: 服务 http://127.0.0.1:5175，同时托管前端 dist
 npm run dev
 ```
 
+## 开发与质量
+
+```bat
+npm test          :: Vitest 单元测试（JSONC 解析 / 颜色管线 / 主题模型 / 注入引擎）
+npm run test:e2e  :: Playwright 端到端冒烟（上传→取色→保存主链路；自动起停服务）
+npm run lint      :: ESLint
+npm run format    :: Prettier 全量格式化
+```
+
+CI（GitHub Actions）在每次 push/PR 时自动跑 lint、tsc、单元测试、构建与 E2E。
+
 ## 数据位置
 
 | 内容            | 路径                                             |
@@ -62,9 +74,11 @@ npm run dev
 | TUI 配置        | `~/.config/opencode/tui.json`                    |
 | WT 备份         | `<WT 目录>/settings.json.ocskin-backup`          |
 | opencode 背景图 | `~/.config/opencode/backgrounds/`                |
+| 桌面端主题库    | `~/.config/opencode/oc-skin-studio/desktop-themes/`（旧版存于 %TEMP%，首次访问自动迁移） |
 | CDP 皮肤包      | `<注入器仓库>/presets/<id>/`                     |
 | 桌面端上次皮肤  | `<项目>/presets/desktop-skins/last.json`         |
 | 内置壁纸缓存    | `<项目>/presets/wallpapers/`（首次访问自动生成） |
+| 官方主题色板缓存 | `%TEMP%/oc-skin-studio/theme-colors/`（7 天 TTL，纯缓存可随时删） |
 
 ## 环境变量（测试/自定义用）
 

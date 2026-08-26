@@ -78,7 +78,13 @@ router.get("/cdp/status", async (req, res) => {
     } catch {
       /* 无记录 */
     }
-    res.json({ ...status, lastApplied, watchEnabled: !!watchState.timer });
+    res.json({
+      ...status,
+      lastApplied,
+      watchEnabled: !!watchState.timer,
+      watchLastTickAt: watchState.lastTickAt,
+      watchLastTickResult: watchState.lastTickResult,
+    });
   } catch (e) {
     bad(res, e);
   }
@@ -146,19 +152,23 @@ router.post("/cdp/apply", async (req, res) => {
         outcomes.map((o) => `${o.label}: ${o.error ?? "样式节点未出现"}`).join("；") || "注入失败",
       );
     }
+    const badHealth = outcomes.filter((o) => o.health && o.health.ok === false && !o.health.unknown);
+    const healthOk = badHealth.length === 0;
     try {
       const p = lastConfigPath();
       fs.mkdirSync(path.dirname(p), { recursive: true });
-      fs.writeFileSync(p, JSON.stringify({ ...cfg, appliedAt: new Date().toISOString() }, null, 2));
+      fs.writeFileSync(
+        p,
+        JSON.stringify({ ...cfg, appliedAt: new Date().toISOString(), healthOk }, null, 2),
+      );
     } catch {
       /* 记录失败不影响注入 */
     }
-    const badHealth = outcomes.filter((o) => o.health && o.health.ok === false && !o.health.unknown);
     res.json({
       ok: true,
       injected,
       total: outcomes.length,
-      healthOk: badHealth.length === 0,
+      healthOk,
       badHealth: badHealth.map((o) => ({ label: o.label, bg: o.health?.bg, sel: o.health?.sel })),
       errors: outcomes.filter((o) => o.error).map((o) => ({ label: o.label, error: o.error })),
     });
@@ -205,9 +215,16 @@ router.post("/cdp/restore", async (req, res) => {
 
 /* ---------- 自动注入守护（参考 opencodedev-skin 的 auto-inject 思路） ---------- */
 
-const watchState: { timer: ReturnType<typeof setInterval> | null; port: number } = {
+const watchState: {
+  timer: ReturnType<typeof setInterval> | null;
+  port: number;
+  lastTickAt: string | null;
+  lastTickResult: string | null;
+} = {
   timer: null,
   port: CDP_PORT_DEFAULT,
+  lastTickAt: null,
+  lastTickResult: null,
 };
 
 function watchFlagPath(): string {
@@ -215,7 +232,13 @@ function watchFlagPath(): string {
 }
 
 async function reapplyIfMissing(): Promise<string> {
-  if (!(await isPortUp(watchState.port))) return "port-down";
+  // pageWsUrls 失败即端口未就绪，单次 /json 请求完成探测（无需先 isPortUp）
+  let urls: string[];
+  try {
+    urls = await pageWsUrls(watchState.port);
+  } catch {
+    return "port-down";
+  }
   let raw: SkinApplyParams | null;
   try {
     raw = JSON.parse(fs.readFileSync(lastConfigPath(), "utf8"));
@@ -223,12 +246,7 @@ async function reapplyIfMissing(): Promise<string> {
     return "no-config";
   }
   if (!raw) return "no-config";
-  let urls: string[];
-  try {
-    urls = await pageWsUrls(watchState.port);
-  } catch {
-    return "no-targets";
-  }
+  if (urls.length === 0) return "no-targets";
   const js = buildSkinEngineJs(normalizeSkinConfig(raw));
   let present = 0;
   let reapplied = 0;
@@ -251,9 +269,14 @@ function startWatch(port: number): void {
   stopWatch();
   watchState.port = port;
   watchState.timer = setInterval(() => {
-    void reapplyIfMissing().catch((e) => {
-      console.warn("[cdp-watch] 自动注入守护失败:", e instanceof Error ? e.message : e);
-    });
+    void reapplyIfMissing()
+      .then((result) => {
+        watchState.lastTickAt = new Date().toISOString();
+        watchState.lastTickResult = result;
+      })
+      .catch((e) => {
+        console.warn("[cdp-watch] 自动注入守护失败:", e instanceof Error ? e.message : e);
+      });
   }, 5000);
   try {
     fs.mkdirSync(path.dirname(watchFlagPath()), { recursive: true });

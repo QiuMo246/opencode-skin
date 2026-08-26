@@ -2,6 +2,7 @@ import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { themesDir, tuiJsonPath, ensureDirs } from "../lib/paths.js";
+import { exportThemesZip, importThemesZip } from "../lib/themePack.js";
 import { writeFileAtomic, readJsonSafe } from "../lib/fsio.js";
 import { deepMerge } from "../lib/merge.js";
 import { validateTuiTheme, validateDesktopTheme } from "../lib/schema.js";
@@ -10,6 +11,9 @@ import { buildDesktopSeeds } from "../lib/palette.js";
 const router = Router();
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const SCHEMA_ID = "https://opencode.ai/desktop-theme.json";
+
+const bad = (res: import("express").Response, e: unknown) =>
+  res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
 
 function themePath(name: string): string | null {
   if (!NAME_RE.test(name)) return null;
@@ -36,6 +40,35 @@ router.get("/", (_req, res) => {
 
 router.get("/__tui/config", (_req, res) => {
   res.json(readJsonSafe(tuiJsonPath()) ?? {});
+});
+
+/* ---------- 主题包导入/导出（zip） ---------- */
+
+router.get("/export", async (_req, res) => {
+  try {
+    const { buf, count } = await exportThemesZip();
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="opencode-themes-${count}-${new Date().toISOString().slice(0, 10)}.zip"`,
+    );
+    res.send(buf);
+  } catch (e) {
+    if ((e instanceof Error && e.message === "没有可导出的主题")) {
+      return res.status(404).json({ error: e.message });
+    }
+    res.status(500).json({ error: `打包失败: ${e instanceof Error ? e.message : String(e)}` });
+  }
+});
+
+router.post("/import", async (req, res) => {
+  try {
+    const b64 = String(req.body?.contentBase64 ?? "");
+    if (!b64) throw new Error("缺少 contentBase64（zip 的 base64 内容）");
+    res.json({ ok: true, ...(await importThemesZip(b64)) });
+  } catch (e) {
+    bad(res, e);
+  }
 });
 
 router.get("/:name", (req, res) => {

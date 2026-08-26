@@ -54,7 +54,20 @@ export type SkinLastApplied = {
   imgSaturate?: number;
   imgOpacity?: number;
   appliedAt?: string;
+  healthOk?: boolean;
 };
+
+/** 守护 tick 结果 → 中文摘要 */
+export function watchTickLabel(result: string | null | undefined): string | null {
+  if (!result) return null;
+  if (result === "present") return "皮肤在位";
+  if (result === "port-down") return "端口未开";
+  if (result === "no-config") return "无注入记录";
+  if (result === "no-targets") return "无页面目标";
+  const m = /^reapplied:(\d+)$/.exec(result);
+  if (m) return `已重注 ×${m[1]}`;
+  return result;
+}
 
 export type CdpStatus = {
   exeFound: boolean;
@@ -65,6 +78,8 @@ export type CdpStatus = {
   pages: Array<{ title: string; url: string }>;
   lastApplied: SkinLastApplied | null;
   watchEnabled?: boolean;
+  watchLastTickAt?: string | null;
+  watchLastTickResult?: string | null;
 };
 export type SkinApplyParams = {
   imageDataUrl?: string;
@@ -126,6 +141,26 @@ export const api = {
       handle<{ ok: boolean; applied: string; restartRequired: boolean }>,
     ),
   tuiConfig: () => fetch("/api/themes/__tui/config").then(handle<Record<string, unknown>>),
+  exportThemesUrl: "/api/themes/export",
+  importThemes: (file: File) =>
+    new Promise<{ ok: boolean; imported: string[]; skipped: string[]; invalid: string[] }>(
+      (resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("读取 zip 文件失败"));
+        reader.onload = () => {
+          const dataUrl = String(reader.result ?? "");
+          const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+          fetch("/api/themes/import", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ contentBase64: base64 }),
+          })
+            .then(handle<{ ok: boolean; imported: string[]; skipped: string[]; invalid: string[] }>)
+            .then(resolve, reject);
+        };
+        reader.readAsDataURL(file);
+      },
+    ),
   builtinWallpapers: () => fetch("/api/images/builtin").then(handle<{ wallpapers: WallpaperInfo[] }>),
   paletteFromPixels: (width: number, height: number, pixels: string, k = 6) =>
     fetch("/api/images/palette", {

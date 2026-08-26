@@ -18,8 +18,6 @@ const holders: Record<Kind, { validate: ValidateFunction | null; error: string |
   desktop: { validate: null, error: null },
 };
 
-const ajv = new Ajv({ allErrors: true, strict: false });
-
 function schemaPath(kind: Kind): string {
   return fileURLToPath(
     new URL(`../schemas/${kind === "tui" ? TUI_SCHEMA_FILE : DESKTOP_SCHEMA_FILE}`, import.meta.url),
@@ -29,7 +27,9 @@ function schemaPath(kind: Kind): string {
 function load(kind: Kind): void {
   try {
     const schema = JSON.parse(fs.readFileSync(schemaPath(kind), "utf8"));
-    holders[kind].validate = ajv.compile(schema);
+    // 独立实例：initSchemas 可被多个模块安全地重复调用（同 $id 二次编译会抛错）
+    const instance = new Ajv({ allErrors: true, strict: false });
+    holders[kind].validate = instance.compile(schema);
     holders[kind].error = null;
   } catch (e) {
     holders[kind].validate = null;

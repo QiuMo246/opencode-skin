@@ -3,6 +3,9 @@ export type HSL = { h: number; s: number; l: number };
 
 export const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 
+/** 已告警过的非法输入（上限 100 条，避免无限增长）。 */
+const warnedInvalidHex = new Set<string>();
+
 export function hexToRgb(hex: string): RGB {
   let h = hex.trim().replace(/^#/, "");
   if (h.length === 3)
@@ -10,7 +13,13 @@ export function hexToRgb(hex: string): RGB {
       .split("")
       .map((c) => c + c)
       .join("");
-  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return { r: 0, g: 0, b: 0 };
+  if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) {
+    if (warnedInvalidHex.size < 100 && !warnedInvalidHex.has(hex)) {
+      warnedInvalidHex.add(hex);
+      console.warn(`[color] hexToRgb 收到非法输入 "${hex}"，已按黑色处理`);
+    }
+    return { r: 0, g: 0, b: 0 };
+  }
   const n = parseInt(h, 16);
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }

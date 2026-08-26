@@ -98,6 +98,19 @@ export default function EditorPage() {
     flash("已新建空白主题，填写名称后保存");
   };
 
+  const importZip = async (file: File) => {
+    try {
+      const r = await api.importThemes(file);
+      const parts = [`导入 ${r.imported.length} 个`];
+      if (r.skipped.length > 0) parts.push(`同名跳过 ${r.skipped.length} 个`);
+      if (r.invalid.length > 0) parts.push(`非法忽略 ${r.invalid.length} 个`);
+      flash(`主题包处理完成：${parts.join("，")}`);
+      reloadList();
+    } catch (e) {
+      setError(String(e));
+    }
+  };
+
   const setSlot = (key: string, side: "dark" | "light", value: string | undefined) => {
     setTheme((t) => {
       const prev = t.theme[key] ?? {};
@@ -144,6 +157,23 @@ export default function EditorPage() {
         <span className="muted">
           {activeTheme ? `当前生效：${activeTheme}` : "当前未通过本工具应用过主题"}
         </span>
+        <span className="toolbar-spacer" />
+        <a className="button-like" href={api.exportThemesUrl} download title="把全部主题打包为 zip 下载">
+          导出全部
+        </a>
+        <label className="button-like" title="从 zip 包导入主题（同名跳过，非法文件忽略）">
+          导入
+          <input
+            type="file"
+            accept=".zip,application/zip"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void importZip(f);
+              e.currentTarget.value = "";
+            }}
+          />
+        </label>
       </div>
 
       {error && <p className="alert alert-err">{error}</p>}

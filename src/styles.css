@@ -726,6 +726,29 @@ input[type="file"] {
   margin-bottom: 14px;
 }
 
+.editor-toolbar .toolbar-spacer {
+  flex: 1;
+}
+
+a.button-like,
+label.button-like {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 13px;
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-btn, 8px);
+  background: var(--panel, transparent);
+  font-size: 13px;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+a.button-like:hover,
+label.button-like:hover {
+  border-color: var(--accent, #88c0d0);
+}
+
 .name-input {
   width: 190px;
   font-family: var(--font-mono);

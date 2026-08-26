@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, type CdpStatus } from "../api";
+import { api, watchTickLabel, type CdpStatus } from "../api";
 
 export default function DesktopStatusBar() {
   const [status, setStatus] = useState<CdpStatus | null>(null);
@@ -44,6 +44,18 @@ export default function DesktopStatusBar() {
             <span className={`pill ${status.watchEnabled ? "pill-ok" : "pill-warn"}`}>
               {status.watchEnabled ? "自动注入守护中" : "守护未开启"}
             </span>
+            {status.watchEnabled && watchTickLabel(status.watchLastTickResult) && (
+              <span className="pill-dim" title={status.watchLastTickAt ?? undefined}>
+                守护：{watchTickLabel(status.watchLastTickResult)}
+              </span>
+            )}
+            {typeof status.lastApplied?.healthOk === "boolean" && (
+              <span className={`pill ${status.lastApplied.healthOk ? "pill-ok" : "pill-warn"}`}>
+                {status.lastApplied.healthOk
+                  ? "注入健康"
+                  : "样式可能被覆盖（类名/结构变化）"}
+              </span>
+            )}
           </>
         ) : (
           <span className="pill-dim">加载中…</span>
