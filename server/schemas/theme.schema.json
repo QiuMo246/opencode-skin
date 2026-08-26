@@ -1,0 +1,97 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://opencode.ai/theme.json",
+  "title": "OpenCode TUI Theme (authored by oc-skin-studio from official docs)",
+  "description": "Hand-authored validation schema derived from https://opencode.ai/docs/themes/. The upstream project does not publish a JSON Schema at this URL; refresh will keep trying the official URL.",
+  "type": "object",
+  "required": ["theme"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "defs": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/colorValue" }
+    },
+    "theme": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "primary": { "$ref": "#/definitions/variant" },
+        "secondary": { "$ref": "#/definitions/variant" },
+        "accent": { "$ref": "#/definitions/variant" },
+        "error": { "$ref": "#/definitions/variant" },
+        "warning": { "$ref": "#/definitions/variant" },
+        "success": { "$ref": "#/definitions/variant" },
+        "info": { "$ref": "#/definitions/variant" },
+        "text": { "$ref": "#/definitions/variant" },
+        "textMuted": { "$ref": "#/definitions/variant" },
+        "background": { "$ref": "#/definitions/variant" },
+        "backgroundPanel": { "$ref": "#/definitions/variant" },
+        "backgroundElement": { "$ref": "#/definitions/variant" },
+        "border": { "$ref": "#/definitions/variant" },
+        "borderActive": { "$ref": "#/definitions/variant" },
+        "borderSubtle": { "$ref": "#/definitions/variant" },
+        "diffAdded": { "$ref": "#/definitions/variant" },
+        "diffRemoved": { "$ref": "#/definitions/variant" },
+        "diffContext": { "$ref": "#/definitions/variant" },
+        "diffHunkHeader": { "$ref": "#/definitions/variant" },
+        "diffHighlightAdded": { "$ref": "#/definitions/variant" },
+        "diffHighlightRemoved": { "$ref": "#/definitions/variant" },
+        "diffAddedBg": { "$ref": "#/definitions/variant" },
+        "diffRemovedBg": { "$ref": "#/definitions/variant" },
+        "diffContextBg": { "$ref": "#/definitions/variant" },
+        "diffLineNumber": { "$ref": "#/definitions/variant" },
+        "diffAddedLineNumberBg": { "$ref": "#/definitions/variant" },
+        "diffRemovedLineNumberBg": { "$ref": "#/definitions/variant" },
+        "markdownText": { "$ref": "#/definitions/variant" },
+        "markdownHeading": { "$ref": "#/definitions/variant" },
+        "markdownLink": { "$ref": "#/definitions/variant" },
+        "markdownLinkText": { "$ref": "#/definitions/variant" },
+        "markdownCode": { "$ref": "#/definitions/variant" },
+        "markdownBlockQuote": { "$ref": "#/definitions/variant" },
+        "markdownEmph": { "$ref": "#/definitions/variant" },
+        "markdownStrong": { "$ref": "#/definitions/variant" },
+        "markdownHorizontalRule": { "$ref": "#/definitions/variant" },
+        "markdownListItem": { "$ref": "#/definitions/variant" },
+        "markdownListEnumeration": { "$ref": "#/definitions/variant" },
+        "markdownImage": { "$ref": "#/definitions/variant" },
+        "markdownImageText": { "$ref": "#/definitions/variant" },
+        "markdownCodeBlock": { "$ref": "#/definitions/variant" },
+        "syntaxComment": { "$ref": "#/definitions/variant" },
+        "syntaxKeyword": { "$ref": "#/definitions/variant" },
+        "syntaxFunction": { "$ref": "#/definitions/variant" },
+        "syntaxVariable": { "$ref": "#/definitions/variant" },
+        "syntaxString": { "$ref": "#/definitions/variant" },
+        "syntaxNumber": { "$ref": "#/definitions/variant" },
+        "syntaxType": { "$ref": "#/definitions/variant" },
+        "syntaxOperator": { "$ref": "#/definitions/variant" },
+        "syntaxPunctuation": { "$ref": "#/definitions/variant" }
+      },
+      "additionalProperties": { "$ref": "#/definitions/variant" }
+    }
+  },
+  "definitions": {
+    "colorValue": {
+      "anyOf": [
+        { "type": "string", "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$" },
+        { "type": "integer", "minimum": 0, "maximum": 255 },
+        { "type": "string", "enum": ["none"] },
+        { "type": "string", "minLength": 1 }
+      ]
+    },
+    "variant": {
+      "anyOf": [
+        { "$ref": "#/definitions/colorValue" },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "properties": {
+            "dark": { "$ref": "#/definitions/colorValue" },
+            "light": { "$ref": "#/definitions/colorValue" }
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,7 @@
+node_modules/
+dist/
+release/
+presets/
+.playwright-mcp/
+*.log
+.DS_Store

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "default",
+  "name": "OpenCode Dream Skin",
+  "image": "五条悟.png",
+  "appearance": "auto",
+  "art": {
+    "focusX": 0.5,
+    "focusY": 0.5,
+    "safeArea": "auto",
+    "taskMode": "ambient"
+  },
+  "palette": {}
+}
