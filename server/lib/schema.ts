@@ -21,7 +21,9 @@ const holders: Record<Kind, { validate: ValidateFunction | null; error: string |
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 function schemaPath(kind: Kind): string {
-  return fileURLToPath(new URL(`../schemas/${kind === "tui" ? TUI_SCHEMA_FILE : DESKTOP_SCHEMA_FILE}`, import.meta.url));
+  return fileURLToPath(
+    new URL(`../schemas/${kind === "tui" ? TUI_SCHEMA_FILE : DESKTOP_SCHEMA_FILE}`, import.meta.url),
+  );
 }
 
 function load(kind: Kind): void {

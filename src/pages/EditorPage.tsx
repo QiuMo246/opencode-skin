@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type ThemeInfo } from "../api";
-import {
-  SLOT_GROUPS,
-  emptyTheme,
-  normalizeLoaded,
-  type TuiThemeJson,
-} from "../lib/themeModel";
+import { SLOT_GROUPS, emptyTheme, normalizeLoaded, toThemeJson, type TuiThemeJson } from "../lib/themeModel";
 import ColorInput from "../components/ColorInput";
 import Preview from "../components/Preview";
 
@@ -49,17 +44,7 @@ export default function EditorPage() {
     }
   };
 
-  const clean = (): object => {
-    const out: Record<string, unknown> = { $schema: "https://opencode.ai/theme.json" };
-    if (theme.defs && Object.keys(theme.defs).length > 0) out.defs = theme.defs;
-    // 遍历全部已加载槽位而非 ALL_SLOTS，避免静默丢弃主题文件里的未知键
-    const slots: Record<string, unknown> = {};
-    for (const [key, v] of Object.entries(theme.theme)) {
-      if (v && (v.dark !== undefined || v.light !== undefined)) slots[key] = v;
-    }
-    out.theme = slots;
-    return out;
-  };
+  const clean = (): object => toThemeJson(theme);
 
   const save = async (): Promise<string | null> => {
     const target = name.trim();
@@ -199,8 +184,8 @@ export default function EditorPage() {
           <h3>实时预览</h3>
           <Preview theme={theme} />
           <p className="muted preview-note">
-            预览为色块映射示意：未设置的槽位以中性底色呈现，none 与 ANSI 引用以近似色呈现。
-            实际终端渲染需重启 opencode 查看。
+            预览为色块映射示意：未设置的槽位以中性底色呈现，none 与 ANSI 引用以近似色呈现。 实际终端渲染需重启
+            opencode 查看。
           </p>
         </aside>
       </div>

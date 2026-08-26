@@ -51,24 +51,44 @@ export default function DesktopStatusBar() {
         {msg && <span className="auto-msg">{msg}</span>}
       </div>
       <div className="dt-actions">
-        <button className="btn" disabled={busy} onClick={() => run(async () => {
-          const s = await api.cdpLaunch();
-          return s.launched ? "Desktop 已带调试端口启动" : "调试端口已可用（复用运行中的实例）";
-        })}>
+        <button
+          className="btn"
+          disabled={busy}
+          onClick={() =>
+            run(async () => {
+              const s = await api.cdpLaunch();
+              return s.launched ? "Desktop 已带调试端口启动" : "调试端口已可用（复用运行中的实例）";
+            })
+          }
+        >
           启动并连接
         </button>
-        <button className="btn btn-ghost" disabled={busy} onClick={() => run(async () => {
-          await api.cdpLaunchForce();
-          return "已退出旧实例并以调试模式重启";
-        })}>
+        <button
+          className="btn btn-ghost"
+          disabled={busy}
+          onClick={() =>
+            run(async () => {
+              await api.cdpLaunchForce();
+              return "已退出旧实例并以调试模式重启";
+            })
+          }
+        >
           退出重启
         </button>
-        <button className="btn btn-ghost" disabled={busy} onClick={() => void refresh()}>刷新</button>
-        <button className="btn btn-ghost" disabled={busy} onClick={() => run(async () => {
-          const next = !(status?.watchEnabled ?? false);
-          const r = await api.cdpWatch(next);
-          return r.watchEnabled ? "守护已开启：皮肤丢失/重启后自动恢复" : "守护已关闭";
-        })}>
+        <button className="btn btn-ghost" disabled={busy} onClick={() => void refresh()}>
+          刷新
+        </button>
+        <button
+          className="btn btn-ghost"
+          disabled={busy}
+          onClick={() =>
+            run(async () => {
+              const next = !(status?.watchEnabled ?? false);
+              const r = await api.cdpWatch(next);
+              return r.watchEnabled ? "守护已开启：皮肤丢失/重启后自动恢复" : "守护已关闭";
+            })
+          }
+        >
           {status?.watchEnabled ? "关闭自动注入" : "开启自动注入"}
         </button>
       </div>

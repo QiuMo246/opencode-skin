@@ -61,10 +61,10 @@ html.dream-active-home #root > div { ... }
 ```javascript
 window.__OPENCODE_DREAM_SKIN_STATE__ = {
   version: "2.0.0",
-  cleanup: Function,        // 清理所有注入
+  cleanup: Function, // 清理所有注入
   appearance: "light|dark",
-  settings: Object,         // 持久化到 localStorage
-  applySettings: Function   // 批量更新 CSS 变量（rAF + 脏标记）
+  settings: Object, // 持久化到 localStorage
+  applySettings: Function, // 批量更新 CSS 变量（rAF + 脏标记）
 };
 ```
 

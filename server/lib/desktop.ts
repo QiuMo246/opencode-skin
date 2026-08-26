@@ -28,17 +28,25 @@ const ID_RE = /^[a-z0-9][a-z0-9-]{0,47}$/;
 /** sRGB hex → OKLCH 字符串（opencodedev-skin 的 accent 用 oklch() 格式）。 */
 export function hexToOklch(hex: string): string {
   let h = hex.replace("#", "");
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
   const n = parseInt(h, 16);
   let r = ((n >> 16) & 255) / 255;
   let g = ((n >> 8) & 255) / 255;
   let b = (n & 255) / 255;
   const lin = (c: number) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
-  r = lin(r); g = lin(g); b = lin(b);
+  r = lin(r);
+  g = lin(g);
+  b = lin(b);
   const l0 = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b;
   const m0 = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b;
   const s0 = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b;
-  const l_ = Math.cbrt(l0), m_ = Math.cbrt(m0), s_ = Math.cbrt(s0);
+  const l_ = Math.cbrt(l0),
+    m_ = Math.cbrt(m0),
+    s_ = Math.cbrt(s0);
   const L = 0.2104542553 * l_ + 0.793617785 * m_ - 0.0040720468 * s_;
   const A = 1.9779984951 * l_ - 2.428592205 * m_ + 0.4505937099 * s_;
   const B = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.808675766 * s_;
@@ -111,14 +119,21 @@ export function buildSkinPack(params: SkinPackParams): Record<string, unknown> {
     },
   };
   writeFileAtomic(path.join(dir, "theme.json"), JSON.stringify(theme, null, 2) + "\n");
-  return { ok: true, skinDir: dir, themePath: path.join(dir, "theme.json"), imagePath: path.join(dir, imgName) };
+  return {
+    ok: true,
+    skinDir: dir,
+    themePath: path.join(dir, "theme.json"),
+    imagePath: path.join(dir, imgName),
+  };
 }
 
 /** 调用上游注入管线（injector.mjs / start.ps1）。 */
 export function runInjector(): Record<string, unknown> {
   const injector = detectInjector();
   if (!injector.found || !injector.repoPath || !injector.launcher) {
-    throw new Error("未找到 opencodedev-skin 注入器，请先克隆仓库到 ~/opencodedev-skin 或设置 OC_SKIN_INJECTOR_DIR");
+    throw new Error(
+      "未找到 opencodedev-skin 注入器，请先克隆仓库到 ~/opencodedev-skin 或设置 OC_SKIN_INJECTOR_DIR",
+    );
   }
   const isPs1 = injector.launcher.endsWith(".ps1");
   const cmd = isPs1
@@ -136,9 +151,3 @@ export function runInjector(): Record<string, unknown> {
   }
   return { ok: true, launcher: injector.launcher, outputTail: tail };
 }
-
-
-
-
-
-

@@ -89,16 +89,35 @@ router.post("/:name/apply", (req, res) => {
 router.post("/:name/export/desktop", (req, res) => {
   const p = themePath(req.params.name);
   if (!p) return res.status(400).json({ error: "invalid theme name" });
-  const tui = readJsonSafe<{ defs?: Record<string, string>; theme?: Record<string, Record<string, string>> }>(p);
+  const tui = readJsonSafe<{ defs?: Record<string, string>; theme?: Record<string, Record<string, string>> }>(
+    p,
+  );
   if (!tui?.theme) return res.status(404).json({ error: "theme not found or unreadable" });
 
-  const rawName = typeof req.body?.name === "string" && req.body.name.trim() ? String(req.body.name).trim() : req.params.name;
-  const id = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "imported-theme";
+  const rawName =
+    typeof req.body?.name === "string" && req.body.name.trim()
+      ? String(req.body.name).trim()
+      : req.params.name;
+  const id =
+    rawName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "imported-theme";
   const seeds = buildDesktopSeeds(tui.theme, tui.defs ?? {});
-  const desktop = { $schema: SCHEMA_ID, name: rawName, id, light: { seeds: seeds.light }, dark: { seeds: seeds.dark } };
+  const desktop = {
+    $schema: SCHEMA_ID,
+    name: rawName,
+    id,
+    light: { seeds: seeds.light },
+    dark: { seeds: seeds.dark },
+  };
 
   const check = validateDesktopTheme(desktop);
-  if (!check.ok) return res.status(500).json({ error: "生成的 DesktopTheme 未通过官方 schema 校验", details: check.errors });
+  if (!check.ok)
+    return res
+      .status(500)
+      .json({ error: "生成的 DesktopTheme 未通过官方 schema 校验", details: check.errors });
 
   const outPath = path.join(themesDir(), `${id}.desktop-theme.json`);
   try {
@@ -108,6 +127,5 @@ router.post("/:name/export/desktop", (req, res) => {
   }
   res.json({ ok: true, path: outPath, theme: desktop });
 });
-
 
 export default router;

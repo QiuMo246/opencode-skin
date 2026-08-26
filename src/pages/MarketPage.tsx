@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  api,
-  type Curated,
-  type InstalledEntry,
-  type RepoHit,
-} from "../api";
+import { api, type Curated, type InstalledEntry, type RepoHit } from "../api";
 import { useOfficialColors } from "../lib/useOfficialColors";
 
 type Tab = "curated" | "search" | "installed";
@@ -20,7 +15,8 @@ const srcLabel = (s: InstalledEntry["source"]): string =>
 export default function MarketPage() {
   const [tab, setTab] = useState<Tab>("curated");
   const [curated, setCurated] = useState<Curated | null>(null);
-  const themeColors = useOfficialColors();  const [q, setQ] = useState("opencode theme");
+  const themeColors = useOfficialColors();
+  const [q, setQ] = useState("opencode theme");
   const [repos, setRepos] = useState<RepoHit[] | null>(null);
   const [total, setTotal] = useState(0);
   const [searching, setSearching] = useState(false);
@@ -29,13 +25,19 @@ export default function MarketPage() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const refreshInstalled = useCallback(() => {
-    api.marketInstalled().then((d) => setInstList(d.themes)).catch(() => {});
+    api
+      .marketInstalled()
+      .then((d) => setInstList(d.themes))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     refreshInstalled();
     if (!curated) {
-      api.marketCurated().then(setCurated).catch((e) => setMsg({ type: "err", text: String(e.message ?? e) }));
+      api
+        .marketCurated()
+        .then(setCurated)
+        .catch((e) => setMsg({ type: "err", text: String(e.message ?? e) }));
     }
   }, [curated, refreshInstalled]);
 

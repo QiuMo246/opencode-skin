@@ -26,12 +26,12 @@
 
 主题按以下顺序加载，**后者覆盖前者**：
 
-| 优先级 | 来源 | 路径 |
-|---|---|---|
-| 1 | 内置主题 | 编译进二进制 |
-| 2 | 用户全局目录 | `~/.config/opencode/themes/*.json` |
-| 3 | 项目根目录 | `<project-root>/.opencode/themes/*.json` |
-| 4 | 当前工作目录 | `./.opencode/themes/*.json` |
+| 优先级 | 来源         | 路径                                     |
+| ------ | ------------ | ---------------------------------------- |
+| 1      | 内置主题     | 编译进二进制                             |
+| 2      | 用户全局目录 | `~/.config/opencode/themes/*.json`       |
+| 3      | 项目根目录   | `<project-root>/.opencode/themes/*.json` |
+| 4      | 当前工作目录 | `./.opencode/themes/*.json`              |
 
 本工具读写 **用户全局目录**（Windows 下即 `C:\Users\<user>\.config\opencode\themes\`），使主题对所有项目生效。
 
@@ -42,26 +42,26 @@
   "$schema": "https://opencode.ai/theme.json",
   "defs": {
     // 可选：可复用颜色定义，供 theme 段引用
-    "base00": "#1a1b26"
+    "base00": "#1a1b26",
   },
   "theme": {
     // 每个槽位支持 dark/light 双变体
-    "primary":   { "dark": "base00", "light": "#ffffff" },
-    "secondary": { "dark": "#7aa2f7", "light": "#7aa2f7" }
+    "primary": { "dark": "base00", "light": "#ffffff" },
+    "secondary": { "dark": "#7aa2f7", "light": "#7aa2f7" },
     // ... 其余槽位见 4.1 节完整清单
-  }
+  },
 }
 ```
 
 颜色值支持五种写法：
 
-| 写法 | 示例 | 说明 |
-|---|---|---|
-| 十六进制 | `"#7aa2f7"` | 最常用，需终端支持 truecolor |
-| ANSI 编号 | `3`（0–255） | 跟随终端色板 |
-| 引用 | `"primary"` / `"defs里的名字"` | 复用已有颜色 |
-| 双变体 | `{"dark": "...", "light": "..."}` | 深浅两套 |
-| 特殊值 | `"none"` | 继承终端默认色（可做透明感） |
+| 写法      | 示例                              | 说明                         |
+| --------- | --------------------------------- | ---------------------------- |
+| 十六进制  | `"#7aa2f7"`                       | 最常用，需终端支持 truecolor |
+| ANSI 编号 | `3`（0–255）                      | 跟随终端色板                 |
+| 引用      | `"primary"` / `"defs里的名字"`    | 复用已有颜色                 |
+| 双变体    | `{"dark": "...", "light": "..."}` | 深浅两套                     |
+| 特殊值    | `"none"`                          | 继承终端默认色（可做透明感） |
 
 ### 2.3 应用主题
 
@@ -85,13 +85,13 @@ opencode 是跑在终端模拟器里的 TUI 程序，主题 JSON **只支持颜�
 
 opencode 存在独立的**桌面版应用**（Windows .exe 安装），其主题系统与 TUI **完全不同**：
 
-| 维度 | TUI | 桌面端 |
-|---|---|---|
-| 格式 | 平铺 60+ 颜色槽位 | 种子色生成式：`seeds`（9 个种子色）或 `palette`（7 必选 + 4 可选）→ OKLCH 算法自动派生全部 UI token |
-| 顶层结构 | `{ "$schema", "defs", "theme" }` | `{ "$schema?", "name", "id", "light", "dark" }`，light/dark 各为一个 variant |
-| 生效方式 | `tui.json` 的 `"theme"` 字段 / `/theme` 命令 | 应用内 Settings → Appearance 选择；选中项存 localStorage，最终渲染为 CSS 变量 |
-| 内置主题 | 编译进二进制 | 打包进前端（`packages/ui/src/theme/themes/*.json`） |
-| 自定义主题加载 | `~/.config/opencode/themes/*.json` ✅ 已支持 | ❌ **官方尚未实现** |
+| 维度           | TUI                                          | 桌面端                                                                                              |
+| -------------- | -------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 格式           | 平铺 60+ 颜色槽位                            | 种子色生成式：`seeds`（9 个种子色）或 `palette`（7 必选 + 4 可选）→ OKLCH 算法自动派生全部 UI token |
+| 顶层结构       | `{ "$schema", "defs", "theme" }`             | `{ "$schema?", "name", "id", "light", "dark" }`，light/dark 各为一个 variant                        |
+| 生效方式       | `tui.json` 的 `"theme"` 字段 / `/theme` 命令 | 应用内 Settings → Appearance 选择；选中项存 localStorage，最终渲染为 CSS 变量                       |
+| 内置主题       | 编译进二进制                                 | 打包进前端（`packages/ui/src/theme/themes/*.json`）                                                 |
+| 自定义主题加载 | `~/.config/opencode/themes/*.json` ✅ 已支持 | ❌ **官方尚未实现**                                                                                 |
 
 桌面端自定义主题现状证据链：
 
@@ -128,24 +128,25 @@ localStorage 持久化、Ctrl+S 控制面板、30s 轮询热重载主题目录�
   "schemaVersion": 1,
   "id": "romantic-rose",
   "name": "Romantic Rose",
-  "image": "background.jpg",      // 相对本主题目录，由本地 HTTP 服务(18765)提供
-  "appearance": "auto",           // auto | light | dark
+  "image": "background.jpg", // 相对本主题目录，由本地 HTTP 服务(18765)提供
+  "appearance": "auto", // auto | light | dark
   "art": {
-    "focusX": 0.5, "focusY": 0.5, // 壁纸焦点
+    "focusX": 0.5,
+    "focusY": 0.5, // 壁纸焦点
     "safeArea": "auto",
-    "taskMode": "ambient"
+    "taskMode": "ambient",
   },
-  "palette": { "accent": "oklch(0.65 0.15 350)" } // 目前仅 accent 一个颜色槽位
+  "palette": { "accent": "oklch(0.65 0.15 350)" }, // 目前仅 accent 一个颜色槽位
 }
 ```
 
 **对我们的意义与风险**：
 
-| 方面 | 结论 |
-|---|---|
-| 意义 | 桌面端"背景图真实可见+液态玻璃"已被证明可行；其皮肤格式简单，我们的取色引擎可直接产出兼容的 theme.json |
-| 局限 | 颜色控制仅 accent 一个槽位（毛玻璃主要靠壁纸透出，非完整配色） |
-| 风险 | 依赖 Tailwind 类名/DOM 结构选择器（如 `#root > div:first-child`、`data-slot="titlebar-v2"`），opencode 更新可能失效，需跟版维护 |
+| 方面             | 结论                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 意义             | 桌面端"背景图真实可见+液态玻璃"已被证明可行；其皮肤格式简单，我们的取色引擎可直接产出兼容的 theme.json                                                  |
+| 局限             | 颜色控制仅 accent 一个槽位（毛玻璃主要靠壁纸透出，非完整配色）                                                                                          |
+| 风险             | 依赖 Tailwind 类名/DOM 结构选择器（如 `#root > div:first-child`、`data-slot="titlebar-v2"`），opencode 更新可能失效，需跟版维护                         |
 | 集成方式（选定） | 不 fork 其注入器，**作为上游运行时依赖调用**（start.ps1 / injector.mjs CLI 兼容）；我们专注 GUI 工作台：生成皮肤包 → 写入其 presets 目录 → 调用注入管线 |
 
 ---
@@ -160,11 +161,11 @@ localStorage 持久化、Ctrl+S 控制面板、30s 轮询热重载主题目录�
 
 ### 3.2 已确认的决策
 
-| 问题 | 决策 |
-|---|---|
-| 工具形态 | **本地 Web 应用**（浏览器访问图形界面） |
-| 技术栈 | 从简，由助手选定 → **TypeScript 全栈** |
-| 附加功能 | 仅选 **GitHub 主题市场** |
+| 问题     | 决策                                                                       |
+| -------- | -------------------------------------------------------------------------- |
+| 工具形态 | **本地 Web 应用**（浏览器访问图形界面）                                    |
+| 技术栈   | 从简，由助手选定 → **TypeScript 全栈**                                     |
+| 附加功能 | 仅选 **GitHub 主题市场**                                                   |
 | 图片用途 | 要求最终效果在 opencode 使用中真实可见；**终端尽量不动，但必要时允许改动** |
 
 ### 3.3 由决策推导的落地方案
@@ -181,21 +182,21 @@ localStorage 持久化、Ctrl+S 控制面板、30s 轮询热重载主题目录�
   - TUI 目标：全流程闭环（编辑 → 保存 → 一键应用到 tui.json）
   - 桌面端目标（双轨）：
     a. **CDP 皮肤轨**：取色/选图 → 生成 opencodedev-skin 兼容的 theme.json 皮肤包
-       （壁纸+accent+art 参数）→ 调用其注入管线，**现在即可真实生效**
+    （壁纸+accent+art 参数）→ 调用其注入管线，**现在即可真实生效**
     b. **官方格式轨**：DesktopTheme JSON 生成与导出，apply 接口预留，
-       待官方支持自定义主题加载后即插即用
+    待官方支持自定义主题加载后即插即用
 
 ### 3.4 平台支持范围（明确声明）
 
 > **本工具的完整功能仅支持 Windows（Windows Terminal）。**
 
-| 功能 | Windows | macOS / Linux |
-|---|---|---|
-| 主题编辑 / 保存 / 应用（tui.json） | ✅ | ✅（路径同为 `~/.config/opencode/`） |
-| 图片取色生成主题 | ✅ | ✅ |
-| 内置图库 | ✅ | ✅ |
-| 背景图真实可见（终端联动） | ✅ 仅 Windows Terminal | ❌ 自动跳过（iTerm2/Kitty 等留有接口，本期不实现） |
-| GitHub 主题市场 | ✅ | ✅ |
+| 功能                               | Windows                | macOS / Linux                                      |
+| ---------------------------------- | ---------------------- | -------------------------------------------------- |
+| 主题编辑 / 保存 / 应用（tui.json） | ✅                     | ✅（路径同为 `~/.config/opencode/`）               |
+| 图片取色生成主题                   | ✅                     | ✅                                                 |
+| 内置图库                           | ✅                     | ✅                                                 |
+| 背景图真实可见（终端联动）         | ✅ 仅 Windows Terminal | ❌ 自动跳过（iTerm2/Kitty 等留有接口，本期不实现） |
+| GitHub 主题市场                    | ✅                     | ✅                                                 |
 
 README 与工具 UI 中均需明示上述范围；非 WT 用户仅失去"背景图可见"能力，
 其余功能不受影响。代码层面以 `TerminalAdapter` 接口隔离各终端实现，
@@ -211,15 +212,15 @@ README 与工具 UI 中均需明示上述范围；非 WT 用户仅失去"背景�
 
 #### 颜色槽位分组（按 opencode 官方 schema 完整覆盖）
 
-| 分组 | 槽位 | 对应界面元素 |
-|---|---|---|
-| 主色 | `primary` `secondary` `accent` `error` `warning` `success` `info` | 强调色、状态色 |
-| 背景 | `background` `backgroundPanel` `backgroundElement` | 软件底色 / 对话框面板 / 元素块 ← **"软件配色"核心** |
-| 边框 | `border` `borderActive` `borderSubtle` | 对话框与面板描边 |
-| 文本 | `text` `textMuted` | 正文 / 次要文字 |
-| Diff | `diffAdded` `diffRemoved` `diffContext` `diffHunkHeader` `diffHighlightAdded` `diffHighlightRemoved` `diffAddedBg` `diffRemovedBg` `diffContextBg` `diffLineNumber` `diffAddedLineNumberBg` `diffRemovedLineNumberBg` | 代码差异视图 |
-| Markdown | `markdownText` `markdownHeading` `markdownLink` `markdownLinkText` `markdownCode` `markdownBlockQuote` `markdownEmph` `markdownStrong` `markdownHorizontalRule` `markdownListItem` `markdownListEnumeration` `markdownImage` `markdownImageText` `markdownCodeBlock` | 回复内容的渲染样式 ← **"对话框内容配色"核心** |
-| 语法高亮 | `syntaxComment` `syntaxKeyword` `syntaxFunction` `syntaxVariable` `syntaxString` `syntaxNumber` `syntaxType` `syntaxOperator` `syntaxPunctuation` | 代码块高亮 |
+| 分组     | 槽位                                                                                                                                                                                                                                                                 | 对应界面元素                                        |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 主色     | `primary` `secondary` `accent` `error` `warning` `success` `info`                                                                                                                                                                                                    | 强调色、状态色                                      |
+| 背景     | `background` `backgroundPanel` `backgroundElement`                                                                                                                                                                                                                   | 软件底色 / 对话框面板 / 元素块 ← **"软件配色"核心** |
+| 边框     | `border` `borderActive` `borderSubtle`                                                                                                                                                                                                                               | 对话框与面板描边                                    |
+| 文本     | `text` `textMuted`                                                                                                                                                                                                                                                   | 正文 / 次要文字                                     |
+| Diff     | `diffAdded` `diffRemoved` `diffContext` `diffHunkHeader` `diffHighlightAdded` `diffHighlightRemoved` `diffAddedBg` `diffRemovedBg` `diffContextBg` `diffLineNumber` `diffAddedLineNumberBg` `diffRemovedLineNumberBg`                                                | 代码差异视图                                        |
+| Markdown | `markdownText` `markdownHeading` `markdownLink` `markdownLinkText` `markdownCode` `markdownBlockQuote` `markdownEmph` `markdownStrong` `markdownHorizontalRule` `markdownListItem` `markdownListEnumeration` `markdownImage` `markdownImageText` `markdownCodeBlock` | 回复内容的渲染样式 ← **"对话框内容配色"核心**       |
+| 语法高亮 | `syntaxComment` `syntaxKeyword` `syntaxFunction` `syntaxVariable` `syntaxString` `syntaxNumber` `syntaxType` `syntaxOperator` `syntaxPunctuation`                                                                                                                    | 代码块高亮                                          |
 
 #### 编辑器能力
 
@@ -241,11 +242,11 @@ README 与工具 UI 中均需明示上述范围；非 WT 用户仅失去"背景�
 
 同一套取色/编辑结果可输出三种产物（据 2.5/2.6 核实结论）：
 
-| 目标 | 产物 | 校验/兼容依据 | 应用方式 |
-|---|---|---|---|
-| TUI | `theme.json`（defs + theme 槽位） | 官网 `theme.json` schema（固化 + 手动刷新） | 一键写 `tui.json` ✅ |
-| 桌面端·CDP 皮肤 | 皮肤目录（`theme.json` + 壁纸资源） | opencodedev-skin `schemaVersion:1` 格式（2.6 节） | 写入其 presets 目录并调用注入管线 ✅ 真实生效 |
-| 桌面端·官方格式 | DesktopTheme JSON（name/id/light/dark，seeds 或 palette） | 仓库 raw 的 `desktop-theme.schema.json`（固化 + 刷新） | 仅导出；应用待官方支持，接口预留 |
+| 目标            | 产物                                                      | 校验/兼容依据                                          | 应用方式                                      |
+| --------------- | --------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------- |
+| TUI             | `theme.json`（defs + theme 槽位）                         | 官网 `theme.json` schema（固化 + 手动刷新）            | 一键写 `tui.json` ✅                          |
+| 桌面端·CDP 皮肤 | 皮肤目录（`theme.json` + 壁纸资源）                       | opencodedev-skin `schemaVersion:1` 格式（2.6 节）      | 写入其 presets 目录并调用注入管线 ✅ 真实生效 |
+| 桌面端·官方格式 | DesktopTheme JSON（name/id/light/dark，seeds 或 palette） | 仓库 raw 的 `desktop-theme.schema.json`（固化 + 刷新） | 仅导出；应用待官方支持，接口预留              |
 
 桌面端双轨说明：
 
@@ -332,13 +333,13 @@ README 与工具 UI 中均需明示上述范围；非 WT 用户仅失去"背景�
 
 ### 5.1 技术栈（选型理由：对用户最简单、生态一致）
 
-| 层 | 选型 | 理由 |
-|---|---|---|
-| 前端 | Vite + React + TypeScript | 快、生态成熟；可直接复用 opencode 官方 schema 做 TS 类型 |
-| 后端 | Node.js + Express | 与前端同语言，单仓库单依赖树；负责所有本地文件读写 |
-| 校验 | 官方 theme.json schema + Ajv | 保证产物合法 |
-| 取色 | 服务端 k-means（纯 TS 实现，无重依赖） | 免 Python 环境 |
-| 运行方式 | 开发 `npm run dev`；发布 `npm run build && npm start` 后自动打开浏览器 | 一条命令上手 |
+| 层       | 选型                                                                   | 理由                                                     |
+| -------- | ---------------------------------------------------------------------- | -------------------------------------------------------- |
+| 前端     | Vite + React + TypeScript                                              | 快、生态成熟；可直接复用 opencode 官方 schema 做 TS 类型 |
+| 后端     | Node.js + Express                                                      | 与前端同语言，单仓库单依赖树；负责所有本地文件读写       |
+| 校验     | 官方 theme.json schema + Ajv                                           | 保证产物合法                                             |
+| 取色     | 服务端 k-means（纯 TS 实现，无重依赖）                                 | 免 Python 环境                                           |
+| 运行方式 | 开发 `npm run dev`；发布 `npm run build && npm start` 后自动打开浏览器 | 一条命令上手                                             |
 
 安全边界：服务仅监听 `127.0.0.1`，不对局域网开放；文件操作白名单限定在 opencode 配置目录与指定临时目录内。
 
@@ -376,23 +377,23 @@ opencode_skin/
 
 ### 5.3 后端 API 设计（草案）
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| GET | `/api/themes` | 列出已安装主题 |
-| GET/PUT/DELETE | `/api/themes/:name` | 读/写/删单个主题 JSON |
-| POST | `/api/themes/:name/apply` | 写入 tui.json 并返回重启提醒 |
-| POST | `/api/themes/:name/export?target=desktop` | 转换并导出 DesktopTheme JSON 到指定位置 |
-| POST | `/api/desktop/skin` | 生成 opencodedev-skin 兼容皮肤包（theme.json + 壁纸）到其 presets 目录 |
-| GET | `/api/desktop/injector/detect` | 探测 opencodedev-skin 安装路径与 OpenCode Desktop 可执行文件 |
-| POST | `/api/desktop/inject` | 调用注入管线（start.ps1 / injector.mjs）应用当前皮肤包 |
-| POST | `/api/schema/refresh` | 重新拉取 TUI 与桌面两份 schema |
-| POST | `/api/images/palette` | multipart 上传图片 → 返回调色板 + 初步映射 |
-| GET | `/api/images/builtin` | 内置图库列表 |
-| GET | `/api/terminal/detect` | 探测 Windows Terminal、settings 路径及 Profile 列表（含 defaultProfile 标记） |
-| POST | `/api/terminal/background` | 设背景图+亚克力（body 含 `profileId`，默认 defaultProfile；自动先备份） |
-| POST | `/api/terminal/restore` | 还原备份 |
-| GET | `/api/market/search?q=` | GitHub 主题搜索（合并精选列表） |
-| POST | `/api/market/install` | `{ repo }` 安装到 themes 目录 |
+| 方法           | 路径                                      | 说明                                                                          |
+| -------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
+| GET            | `/api/themes`                             | 列出已安装主题                                                                |
+| GET/PUT/DELETE | `/api/themes/:name`                       | 读/写/删单个主题 JSON                                                         |
+| POST           | `/api/themes/:name/apply`                 | 写入 tui.json 并返回重启提醒                                                  |
+| POST           | `/api/themes/:name/export?target=desktop` | 转换并导出 DesktopTheme JSON 到指定位置                                       |
+| POST           | `/api/desktop/skin`                       | 生成 opencodedev-skin 兼容皮肤包（theme.json + 壁纸）到其 presets 目录        |
+| GET            | `/api/desktop/injector/detect`            | 探测 opencodedev-skin 安装路径与 OpenCode Desktop 可执行文件                  |
+| POST           | `/api/desktop/inject`                     | 调用注入管线（start.ps1 / injector.mjs）应用当前皮肤包                        |
+| POST           | `/api/schema/refresh`                     | 重新拉取 TUI 与桌面两份 schema                                                |
+| POST           | `/api/images/palette`                     | multipart 上传图片 → 返回调色板 + 初步映射                                    |
+| GET            | `/api/images/builtin`                     | 内置图库列表                                                                  |
+| GET            | `/api/terminal/detect`                    | 探测 Windows Terminal、settings 路径及 Profile 列表（含 defaultProfile 标记） |
+| POST           | `/api/terminal/background`                | 设背景图+亚克力（body 含 `profileId`，默认 defaultProfile；自动先备份）       |
+| POST           | `/api/terminal/restore`                   | 还原备份                                                                      |
+| GET            | `/api/market/search?q=`                   | GitHub 主题搜索（合并精选列表）                                               |
+| POST           | `/api/market/install`                     | `{ repo }` 安装到 themes 目录                                                 |
 
 ### 5.4 关键数据流
 
@@ -415,29 +416,29 @@ opencode_skin/
 
 ## 6. 风险与对策
 
-| 风险 | 影响 | 对策 |
-|---|---|---|
-| opencode 配置校验严格，坏文件导致启动失败 | 高 | 构建期固化官方 schema，写盘前 100% 校验；同时提供文档中的环境变量逃生口说明 |
-| 改坏 Windows Terminal 设置 | 中 | 写前强制备份 `.ocskin-backup`；UI 一键还原；仅在用户显式点击时写入 |
-| 主题需重启 opencode 才生效 | 低 | 所有应用动作后明确弹提示；预览层弥补等待期的视觉反馈 |
-| GitHub 匿名 API 限额（60 次/时） | 低 | 内置精选列表缓存兜底；可选填 PAT 提升限额 |
-| 用户终端非 Windows Terminal | 低 | 功能优雅降级为"仅取色"，不影响主流程 |
-| truecolor 未开启导致色彩失真 | 低 | 文档提供 `COLORTERM=truecolor` 检查指引 |
-| 桌面端自定义主题官方未支持（2.5 节） | 中 | 已由 CDP 皮肤轨兜底（真实生效）；官方格式仅承诺"生成+导出"，apply 接口预留 |
-| CDP 注入的 DOM 选择器随 opencode 更新失效（上游固有风险） | 中 | **不 fork 注入器**，作为上游依赖跟随其更新；皮肤生成与注入执行解耦，上游失效时仅桌面壁纸轨受影响，TUI 轨不受牵连 |
-| desktop-theme schema 未在官网发布（404） | 低 | 固化仓库 raw 版本并支持手动刷新；官网发布后切换 URL |
+| 风险                                                      | 影响 | 对策                                                                                                             |
+| --------------------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------- |
+| opencode 配置校验严格，坏文件导致启动失败                 | 高   | 构建期固化官方 schema，写盘前 100% 校验；同时提供文档中的环境变量逃生口说明                                      |
+| 改坏 Windows Terminal 设置                                | 中   | 写前强制备份 `.ocskin-backup`；UI 一键还原；仅在用户显式点击时写入                                               |
+| 主题需重启 opencode 才生效                                | 低   | 所有应用动作后明确弹提示；预览层弥补等待期的视觉反馈                                                             |
+| GitHub 匿名 API 限额（60 次/时）                          | 低   | 内置精选列表缓存兜底；可选填 PAT 提升限额                                                                        |
+| 用户终端非 Windows Terminal                               | 低   | 功能优雅降级为"仅取色"，不影响主流程                                                                             |
+| truecolor 未开启导致色彩失真                              | 低   | 文档提供 `COLORTERM=truecolor` 检查指引                                                                          |
+| 桌面端自定义主题官方未支持（2.5 节）                      | 中   | 已由 CDP 皮肤轨兜底（真实生效）；官方格式仅承诺"生成+导出"，apply 接口预留                                       |
+| CDP 注入的 DOM 选择器随 opencode 更新失效（上游固有风险） | 中   | **不 fork 注入器**，作为上游依赖跟随其更新；皮肤生成与注入执行解耦，上游失效时仅桌面壁纸轨受影响，TUI 轨不受牵连 |
+| desktop-theme schema 未在官网发布（404）                  | 低   | 固化仓库 raw 版本并支持手动刷新；官网发布后切换 URL                                                              |
 
 ---
 
 ## 7. 里程碑计划
 
-| 阶段 | 内容 | 交付物 |
-|---|---|---|
-| M1 脚手架 | 仓库初始化、前后端骨架、路径解析、schema 校验封装 | 可运行的空壳应用 |
-| M2 编辑器 | 槽位编辑 UI、defs 管理、色块映射预览、schema 刷新接口、原子写入封装、保存/应用 tui.json | 能产出并应用合法主题 |
-| M3 图片 | 上传（前端压缩+进度）、取色映射、三产物输出、内置图库、WT 探测/多 Profile/背景写入+还原、CDP 皮肤包生成与注入调用 | 需求 1 完整落地（TUI + 桌面壁纸轨真实生效） |
-| M4 市场 | GitHub 搜索、精选列表、一键安装、更新检查、内置 liquid-glass 预设（TUI + CDP 双格式） | 需求 3 完整落地 |
-| M5 打磨 | 异常处理、平台支持声明与 README、一键还原入口、打包脚本 | v0.1 可发布 |
+| 阶段      | 内容                                                                                                              | 交付物                                      |
+| --------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| M1 脚手架 | 仓库初始化、前后端骨架、路径解析、schema 校验封装                                                                 | 可运行的空壳应用                            |
+| M2 编辑器 | 槽位编辑 UI、defs 管理、色块映射预览、schema 刷新接口、原子写入封装、保存/应用 tui.json                           | 能产出并应用合法主题                        |
+| M3 图片   | 上传（前端压缩+进度）、取色映射、三产物输出、内置图库、WT 探测/多 Profile/背景写入+还原、CDP 皮肤包生成与注入调用 | 需求 1 完整落地（TUI + 桌面壁纸轨真实生效） |
+| M4 市场   | GitHub 搜索、精选列表、一键安装、更新检查、内置 liquid-glass 预设（TUI + CDP 双格式）                             | 需求 3 完整落地                             |
+| M5 打磨   | 异常处理、平台支持声明与 README、一键还原入口、打包脚本                                                           | v0.1 可发布                                 |
 
 ---
 
@@ -462,14 +463,14 @@ opencode_skin/
 
 ## 9. 附：opencode 相关路径速查（Windows）
 
-| 用途 | 路径 |
-|---|---|
-| 全局配置 | `~/.config/opencode/opencode.json(c)` |
-| 主题目录（本工具主要写入点） | `~/.config/opencode/themes/*.json` |
-| TUI 配置（应用主题时写入） | `~/.config/opencode/tui.json` |
-| 主题 schema | https://opencode.ai/theme.json |
-| 主配置 schema | https://opencode.ai/config.json |
-| TUI 配置 schema | https://opencode.ai/tui.json |
+| 用途                         | 路径                                  |
+| ---------------------------- | ------------------------------------- |
+| 全局配置                     | `~/.config/opencode/opencode.json(c)` |
+| 主题目录（本工具主要写入点） | `~/.config/opencode/themes/*.json`    |
+| TUI 配置（应用主题时写入）   | `~/.config/opencode/tui.json`         |
+| 主题 schema                  | https://opencode.ai/theme.json        |
+| 主配置 schema                | https://opencode.ai/config.json       |
+| TUI 配置 schema              | https://opencode.ai/tui.json          |
 
 ---
 
@@ -534,4 +535,3 @@ opencode_skin/
   `/api/desktop/themes`，内置不可删）。
 - **壁纸工作台**：上传/内置图库 → 1920 JPEG 壁纸 + 200px 取色双通道；
   调色板色块点击一键设为强调色；焦点 X/Y 与画面四参数集中于此页。
-

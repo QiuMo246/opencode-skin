@@ -4,7 +4,7 @@ export function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 export function deepMerge<T>(target: T, patch: unknown): T {
   if (!isPlainObject(target) || !isPlainObject(patch)) {
-    return (patch === undefined ? target : (patch as T));
+    return patch === undefined ? target : (patch as T);
   }
   const out: Record<string, unknown> = { ...target };
   for (const [key, value] of Object.entries(patch)) {

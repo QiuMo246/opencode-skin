@@ -31,9 +31,12 @@ export function normalizeSkinConfig(p: SkinApplyParams) {
     v: 1 as const,
     light,
     accentHex: accentOk ? (p.accentHex as string) : "#88c0d0",
-    imageDataUrl: typeof p.imageDataUrl === "string" && p.imageDataUrl.startsWith("data:image/") ? p.imageDataUrl : "",
+    imageDataUrl:
+      typeof p.imageDataUrl === "string" && p.imageDataUrl.startsWith("data:image/") ? p.imageDataUrl : "",
     panelAlpha: clamp01(p.panelAlpha, light ? 0.72 : 0.78),
-    blurPx: Math.round(Math.max(0, Math.min(40, typeof p.blurPx === "number" && Number.isFinite(p.blurPx) ? p.blurPx : 18))),
+    blurPx: Math.round(
+      Math.max(0, Math.min(40, typeof p.blurPx === "number" && Number.isFinite(p.blurPx) ? p.blurPx : 18)),
+    ),
     titlebarAlpha: clamp01(p.titlebarAlpha, 0.6),
     contentAlpha: 0.1,
     focusX: clamp01(p.focusX, 0.5),
@@ -58,32 +61,68 @@ function cssRulesFor(c: SkinConfig): string {
   const ca = c.contentAlpha;
   const L: string[] = [];
   L.push(`html.oc-studio-skin{--ocs-accent:${c.accentHex};color-scheme:${c.light ? "light" : "dark"};}`);
-  L.push(`html.oc-studio-skin,html.oc-studio-skin body,html.oc-studio-skin #root{background:transparent !important;}`);
-  L.push(`html.oc-studio-skin::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:${c.imageDataUrl ? `url("${c.imageDataUrl}")` : "none"} center/${fx}% ${fy}% no-repeat;opacity:${c.imgOpacity};filter:brightness(${c.imgBrightness}%) contrast(${c.imgContrast}%) saturate(${c.imgSaturate}%);}`);
-  L.push(`html.oc-studio-skin #root > div:first-child{background-color:rgba(${panelRgb},${c.panelAlpha}) !important;-webkit-backdrop-filter:blur(${c.blurPx}px) saturate(1.1);backdrop-filter:blur(${c.blurPx}px) saturate(1.1);contain:layout style;}`);
-  L.push(`html.oc-studio-skin header[data-slot="titlebar-v2"]{background-color:rgba(${panelRgb},${c.titlebarAlpha}) !important;border-bottom:1px solid rgba(${bd},${bdA}) !important;}`);
-  L.push(`html.oc-studio-skin [data-slot="titlebar-tab-item"]{background-color:rgba(255,255,255,${c.light ? 0.15 : 0.08}) !important;}`);
-  L.push(`html.oc-studio-skin [data-slot="titlebar-tab-item"][data-active="true"]{background-color:rgba(${contentRgb},${c.light ? 0.35 : 0.4}) !important;}`);
-  L.push(`html.oc-studio-skin main [class*="bg-background"],html.oc-studio-skin main [class*="bg-v2-background"]{background-color:rgba(${contentRgb},${ca}) !important;}`);
-  L.push(`html.oc-studio-skin aside,html.oc-studio-skin aside [class*="bg-background"],html.oc-studio-skin aside [class*="bg-v2-background"]{background-color:rgba(${contentRgb},${ca}) !important;}`);
-  L.push(`html.oc-studio-skin aside [data-component="tabs"],html.oc-studio-skin aside [data-component="session-review-v2"],html.oc-studio-skin aside [data-component="session-review-v2-sidebar-root"],html.oc-studio-skin aside [data-slot="tabs-list"],html.oc-studio-skin aside [data-slot="tabs-trigger-wrapper"],html.oc-studio-skin aside .session-review-v2-tabs-bar{background-color:rgba(${contentRgb},${ca}) !important;}`);
-  L.push(`html.oc-studio-skin [data-component="session-prompt-dock"],html.oc-studio-skin [data-component="prompt-input-v2"],html.oc-studio-skin [data-component="session-composer"]{background-color:rgba(${contentRgb},${Math.min(1, ca + 0.1)}) !important;border:1px solid rgba(${bd},${bdA}) !important;}`);
+  L.push(
+    `html.oc-studio-skin,html.oc-studio-skin body,html.oc-studio-skin #root{background:transparent !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:${c.imageDataUrl ? `url("${c.imageDataUrl}")` : "none"} center/${fx}% ${fy}% no-repeat;opacity:${c.imgOpacity};filter:brightness(${c.imgBrightness}%) contrast(${c.imgContrast}%) saturate(${c.imgSaturate}%);}`,
+  );
+  L.push(
+    `html.oc-studio-skin #root > div:first-child{background-color:rgba(${panelRgb},${c.panelAlpha}) !important;-webkit-backdrop-filter:blur(${c.blurPx}px) saturate(1.1);backdrop-filter:blur(${c.blurPx}px) saturate(1.1);contain:layout style;}`,
+  );
+  L.push(
+    `html.oc-studio-skin header[data-slot="titlebar-v2"]{background-color:rgba(${panelRgb},${c.titlebarAlpha}) !important;border-bottom:1px solid rgba(${bd},${bdA}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin [data-slot="titlebar-tab-item"]{background-color:rgba(255,255,255,${c.light ? 0.15 : 0.08}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin [data-slot="titlebar-tab-item"][data-active="true"]{background-color:rgba(${contentRgb},${c.light ? 0.35 : 0.4}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin main [class*="bg-background"],html.oc-studio-skin main [class*="bg-v2-background"]{background-color:rgba(${contentRgb},${ca}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin aside,html.oc-studio-skin aside [class*="bg-background"],html.oc-studio-skin aside [class*="bg-v2-background"]{background-color:rgba(${contentRgb},${ca}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin aside [data-component="tabs"],html.oc-studio-skin aside [data-component="session-review-v2"],html.oc-studio-skin aside [data-component="session-review-v2-sidebar-root"],html.oc-studio-skin aside [data-slot="tabs-list"],html.oc-studio-skin aside [data-slot="tabs-trigger-wrapper"],html.oc-studio-skin aside .session-review-v2-tabs-bar{background-color:rgba(${contentRgb},${ca}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin [data-component="session-prompt-dock"],html.oc-studio-skin [data-component="prompt-input-v2"],html.oc-studio-skin [data-component="session-composer"]{background-color:rgba(${contentRgb},${Math.min(1, ca + 0.1)}) !important;border:1px solid rgba(${bd},${bdA}) !important;}`,
+  );
   L.push(`html.oc-studio-skin [data-component="prompt-input"]{background-color:transparent !important;}`);
-  L.push(`html.oc-studio-skin textarea,html.oc-studio-skin [contenteditable="true"]{background-color:rgba(255,255,255,${c.light ? 0.35 : 0.08}) !important;}`);
-  L.push(`html.oc-studio-skin [data-component="button-v2"],html.oc-studio-skin [data-component="icon-button-v2"],html.oc-studio-skin [data-component="icon-button"]{background-color:rgba(255,255,255,${c.light ? 0.25 : 0.1}) !important;border:1px solid rgba(${bd},${c.light ? 0.06 : 0.1}) !important;}`);
-  L.push(`html.oc-studio-skin [data-component="button-v2"]:hover,html.oc-studio-skin [data-component="icon-button-v2"]:hover,html.oc-studio-skin [data-component="icon-button"]:hover{background-color:rgba(255,255,255,${c.light ? 0.4 : 0.16}) !important;}`);
-  L.push(`html.oc-studio-skin [data-component="dialog-stack"],html.oc-studio-skin [data-component="toast-v2-region"]{background-color:rgba(${contentRgb},0.85) !important;}`);
+  L.push(
+    `html.oc-studio-skin textarea,html.oc-studio-skin [contenteditable="true"]{background-color:rgba(255,255,255,${c.light ? 0.35 : 0.08}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin [data-component="button-v2"],html.oc-studio-skin [data-component="icon-button-v2"],html.oc-studio-skin [data-component="icon-button"]{background-color:rgba(255,255,255,${c.light ? 0.25 : 0.1}) !important;border:1px solid rgba(${bd},${c.light ? 0.06 : 0.1}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin [data-component="button-v2"]:hover,html.oc-studio-skin [data-component="icon-button-v2"]:hover,html.oc-studio-skin [data-component="icon-button"]:hover{background-color:rgba(255,255,255,${c.light ? 0.4 : 0.16}) !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin [data-component="dialog-stack"],html.oc-studio-skin [data-component="toast-v2-region"]{background-color:rgba(${contentRgb},0.85) !important;}`,
+  );
   if (c.light) {
     L.push(`html.oc-studio-skin #root{color:#2d3748 !important;text-shadow:0 1px 2px rgba(0,0,0,0.08);}`);
-    L.push(`html.oc-studio-skin,html.oc-studio-skin #root,html.oc-studio-skin #root *{--v2-text-text-base:#2d3748 !important;--v2-text-text-faint:#6b7280 !important;--v2-text-text-accent:${c.accentHex} !important;--v2-icon-icon-base:#4b5563 !important;--v2-icon-icon-accent:${c.accentHex} !important;--v2-border-border:rgba(0,0,0,0.1) !important;--v2-border-border-accent:${c.accentHex} !important;--v2-accent-accent:${c.accentHex} !important;--v2-surface-surface:rgba(255,255,255,0.4) !important;}`);
+    L.push(
+      `html.oc-studio-skin,html.oc-studio-skin #root,html.oc-studio-skin #root *{--v2-text-text-base:#2d3748 !important;--v2-text-text-faint:#6b7280 !important;--v2-text-text-accent:${c.accentHex} !important;--v2-icon-icon-base:#4b5563 !important;--v2-icon-icon-accent:${c.accentHex} !important;--v2-border-border:rgba(0,0,0,0.1) !important;--v2-border-border-accent:${c.accentHex} !important;--v2-accent-accent:${c.accentHex} !important;--v2-surface-surface:rgba(255,255,255,0.4) !important;}`,
+    );
   } else {
     L.push(`html.oc-studio-skin #root{color:#e2e8f0 !important;text-shadow:0 1px 2px rgba(0,0,0,0.3);}`);
   }
   L.push(`html.oc-studio-skin ::-webkit-scrollbar{width:6px;height:6px;}`);
   L.push(`html.oc-studio-skin ::-webkit-scrollbar-track{background:transparent !important;}`);
-  L.push(`html.oc-studio-skin ::-webkit-scrollbar-thumb{background:rgba(${bd},${c.light ? 0.18 : 0.15}) !important;border-radius:3px;}`);
-  L.push(`html.oc-studio-skin.oc-active-home #root > div{background-color:rgba(${panelRgb},${c.panelAlpha}) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:none !important;}`);
-  L.push(`html.oc-studio-skin.oc-active-home #root > div > *{background-color:rgba(${contentRgb},0.6) !important;}`);
+  L.push(
+    `html.oc-studio-skin ::-webkit-scrollbar-thumb{background:rgba(${bd},${c.light ? 0.18 : 0.15}) !important;border-radius:3px;}`,
+  );
+  L.push(
+    `html.oc-studio-skin.oc-active-home #root > div{background-color:rgba(${panelRgb},${c.panelAlpha}) !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important;box-shadow:none !important;}`,
+  );
+  L.push(
+    `html.oc-studio-skin.oc-active-home #root > div > *{background-color:rgba(${contentRgb},0.6) !important;}`,
+  );
   return L.join("\n");
 }
 
@@ -117,6 +156,7 @@ const ENGINE_BODY = [
 export function buildSkinEngineJs(cfg: SkinConfig): string {
   const cfgJson = JSON.stringify(cfg);
   const cssJson = JSON.stringify(cssRulesFor(cfg));
-  return "(function(){\n" + ENGINE_BODY.split("__CSS__").join(cssJson).split("__CFG__").join(cfgJson) + "\n})();";
+  return (
+    "(function(){\n" + ENGINE_BODY.split("__CSS__").join(cssJson).split("__CFG__").join(cfgJson) + "\n})();"
+  );
 }
-

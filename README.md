@@ -5,12 +5,14 @@
 ## 功能总览
 
 ### 主题编辑器（M1/M2）
+
 - 49 个官方主题槽位分组编辑（基础色 / diff / markdown / 语法高亮），支持深浅双模式
 - 实时 TUI 预览（对话、diff、markdown 渲染模拟）
 - 基于 [官方 theme.json schema](https://opencode.ai/docs/themes/) 的 Ajv 校验，保存即写入 `~/.config/opencode/themes/`
 - 一键应用（写入 `tui.json` 的 `theme` 字段）、DesktopTheme 桌面主题导出（过官方 schema）
 
 ### 壁纸工作台（M3）
+
 - 上传任意图片（前端压缩到 200px 后传输）或选用 8 张内置程序化壁纸
 - k-means 取色 + 50 槽位自动映射，WCAG 对比度自动校正，生成完整深浅双模式主题
 - 三端输出：
@@ -19,12 +21,14 @@
   3. **CDP 桌面皮肤包** —— 生成 `theme.json`（accent 自动转 OKLCH）+ 背景图，可调用本地注入器
 
 ### 主题市场（M4）
+
 - **官方精选**：实时列出 opencode 仓库内置的 33 个主题（tokyonight、gruvbox、dracula…），一键安装为本机副本
 - **本地预设**：内置 Liquid Glass 磨砂玻璃 / 极光两套程序生成主题，离线可用
 - **GitHub 搜索**：按 star 搜索主题仓库，扫描仓库内合法主题文件自动安装（多主题仓库自动加前缀命名）
 - **更新检查**：按内容哈希比对远程最新版，识别「本地已修改」「有更新」状态
 
 ### 桌面端皮肤注入（M6）
+
 - 内置 CDP 注入器，无需外部仓库：自动探测 OpenCode Desktop 安装路径，一键带调试端口启动（可选先退出旧实例）
 - **常驻皮肤引擎**（参考 opencodedev-skin 架构）：
   - 页面刷新 / 切换会话 → `Page.addScriptToEvaluateOnNewDocument` + localStorage 自动重放
@@ -52,26 +56,26 @@ npm run dev
 
 ## 数据位置
 
-| 内容 | 路径 |
-|---|---|
-| TUI 主题 | `~/.config/opencode/themes/*.json` |
-| TUI 配置 | `~/.config/opencode/tui.json` |
-| WT 备份 | `<WT 目录>/settings.json.ocskin-backup` |
-| opencode 背景图 | `~/.config/opencode/backgrounds/` |
-| CDP 皮肤包 | `<注入器仓库>/presets/<id>/` |
-| 桌面端上次皮肤 | `<项目>/presets/desktop-skins/last.json` |
-| 内置壁纸缓存 | `<项目>/presets/wallpapers/`（首次访问自动生成） |
+| 内容            | 路径                                             |
+| --------------- | ------------------------------------------------ |
+| TUI 主题        | `~/.config/opencode/themes/*.json`               |
+| TUI 配置        | `~/.config/opencode/tui.json`                    |
+| WT 备份         | `<WT 目录>/settings.json.ocskin-backup`          |
+| opencode 背景图 | `~/.config/opencode/backgrounds/`                |
+| CDP 皮肤包      | `<注入器仓库>/presets/<id>/`                     |
+| 桌面端上次皮肤  | `<项目>/presets/desktop-skins/last.json`         |
+| 内置壁纸缓存    | `<项目>/presets/wallpapers/`（首次访问自动生成） |
 
 ## 环境变量（测试/自定义用）
 
-| 变量 | 作用 |
-|---|---|
-| `PORT` | 服务端口（默认 5175） |
-| `OC_SKIN_THEMES_DIR` | 覆盖主题目录 |
-| `OC_SKIN_WT_SETTINGS` | 覆盖 Windows Terminal settings.json 路径 |
-| `OC_SKIN_PRESETS_DIR` | 覆盖 CDP 皮肤包输出目录 |
-| `OC_SKIN_INJECTOR_DIR` | 覆盖注入器仓库探测路径 |
-| `OC_SKIN_DESKTOP_EXE` | 覆盖 OpenCode Desktop 可执行文件路径 |
+| 变量                   | 作用                                     |
+| ---------------------- | ---------------------------------------- |
+| `PORT`                 | 服务端口（默认 5175）                    |
+| `OC_SKIN_THEMES_DIR`   | 覆盖主题目录                             |
+| `OC_SKIN_WT_SETTINGS`  | 覆盖 Windows Terminal settings.json 路径 |
+| `OC_SKIN_PRESETS_DIR`  | 覆盖 CDP 皮肤包输出目录                  |
+| `OC_SKIN_INJECTOR_DIR` | 覆盖注入器仓库探测路径                   |
+| `OC_SKIN_DESKTOP_EXE`  | 覆盖 OpenCode Desktop 可执行文件路径     |
 
 ## 项目结构
 
@@ -106,5 +110,3 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 - 应用或修改主题后需**重启 opencode** 才会生效（TUI 启动时读取主题）
 - Windows Terminal 写入前会自动备份原 settings.json，可在工作台一键还原
 - GitHub 相关功能依赖网络；未检测到 Windows Terminal / 注入器时对应面板自动置灰降级
-
-

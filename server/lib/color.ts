@@ -5,14 +5,21 @@ export const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 
 export function hexToRgb(hex: string): RGB {
   let h = hex.trim().replace(/^#/, "");
-  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  if (h.length === 3)
+    h = h
+      .split("")
+      .map((c) => c + c)
+      .join("");
   if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) return { r: 0, g: 0, b: 0 };
   const n = parseInt(h, 16);
   return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
 }
 
 export function rgbToHex({ r, g, b }: RGB): string {
-  const to = (v: number) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, "0");
+  const to = (v: number) =>
+    Math.round(Math.min(255, Math.max(0, v)))
+      .toString(16)
+      .padStart(2, "0");
   return "#" + to(r) + to(g) + to(b);
 }
 
@@ -101,7 +108,7 @@ export function saturate(hex: string, factor: number): string {
 }
 
 export function hueColor(deg: number, s: number, l: number): string {
-  return rgbToHex(hslToRgb({ h: ((deg % 360) / 360), s, l }));
+  return rgbToHex(hslToRgb({ h: (deg % 360) / 360, s, l }));
 }
 
 /** 迭代调整前景色明度直到与背景达到目标对比度（尽量少改动色相/饱和度）。 */

@@ -16,11 +16,39 @@ export const OFFICIAL = {
 const UA = "oc-skin-studio/0.1 (local theme tool)";
 const NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
 const FALLBACK_THEMES = [
-  "aura", "ayu", "carbonfox", "catppuccin", "catppuccin-frappe", "catppuccin-macchiato",
-  "cobalt2", "cursor", "dracula", "everforest", "flexoki", "github", "gruvbox",
-  "kanagawa", "lucent-orng", "material", "matrix", "mercury", "monokai", "nightowl",
-  "nord", "one-dark", "opencode", "orng", "osaka-jade", "palenight", "rosepine",
-  "solarized", "synthwave84", "tokyonight", "vercel", "vesper", "zenburn",
+  "aura",
+  "ayu",
+  "carbonfox",
+  "catppuccin",
+  "catppuccin-frappe",
+  "catppuccin-macchiato",
+  "cobalt2",
+  "cursor",
+  "dracula",
+  "everforest",
+  "flexoki",
+  "github",
+  "gruvbox",
+  "kanagawa",
+  "lucent-orng",
+  "material",
+  "matrix",
+  "mercury",
+  "monokai",
+  "nightowl",
+  "nord",
+  "one-dark",
+  "opencode",
+  "orng",
+  "osaka-jade",
+  "palenight",
+  "rosepine",
+  "solarized",
+  "synthwave84",
+  "tokyonight",
+  "vercel",
+  "vesper",
+  "zenburn",
 ];
 
 export async function ghJson<T>(url: string): Promise<T> {
@@ -62,8 +90,7 @@ async function ghText(url: string): Promise<string> {
   return await res.text();
 }
 
-export const sha256 = (s: string): string =>
-  crypto.createHash("sha256").update(s).digest("hex");
+export const sha256 = (s: string): string => crypto.createHash("sha256").update(s).digest("hex");
 
 export type OfficialItem = { id: string; rawUrl: string };
 
@@ -77,12 +104,10 @@ export async function listOfficial(): Promise<OfficialItem[]> {
     if (list.length > 0) return list;
     throw new Error("empty listing");
   } catch {
-    return FALLBACK_THEMES.map(
-      (id) => ({
-        id,
-        rawUrl: `https://raw.githubusercontent.com/${OFFICIAL.owner}/${OFFICIAL.repo}/${OFFICIAL.ref}/${OFFICIAL.dir}/${id}.json`,
-      }),
-    );
+    return FALLBACK_THEMES.map((id) => ({
+      id,
+      rawUrl: `https://raw.githubusercontent.com/${OFFICIAL.owner}/${OFFICIAL.repo}/${OFFICIAL.ref}/${OFFICIAL.dir}/${id}.json`,
+    }));
   }
 }
 
@@ -230,29 +255,55 @@ export function buildPreset(id: string): object | null {
         removedBg: S("#3a1d20", "#fbdddb"),
       },
       {
-        primary: S("glow", "glow"), secondary: S("haze", "haze"), accent: S("cyan", "cyan"),
-        error: S("rose", "rose"), warning: S("amber", "amber"), success: S("mint", "mint"),
-        info: S("glow", "haze"), text: S("ink", "ink"), textMuted: S("inkSoft", "inkSoft"),
-        background: S("canvas", "canvas"), backgroundPanel: S("panel", "panel"),
+        primary: S("glow", "glow"),
+        secondary: S("haze", "haze"),
+        accent: S("cyan", "cyan"),
+        error: S("rose", "rose"),
+        warning: S("amber", "amber"),
+        success: S("mint", "mint"),
+        info: S("glow", "haze"),
+        text: S("ink", "ink"),
+        textMuted: S("inkSoft", "inkSoft"),
+        background: S("canvas", "canvas"),
+        backgroundPanel: S("panel", "panel"),
         backgroundElement: S("elem", "elem"),
-        border: S("line", "line"), borderActive: S("lineHot", "lineHot"), borderSubtle: S("line", "line"),
-        diffAdded: S("mint", "mint"), diffRemoved: S("rose", "rose"),
-        diffContext: S("lineHot", "line"), diffHunkHeader: S("haze", "haze"),
-        diffHighlightAdded: S("mint", "mint"), diffHighlightRemoved: S("rose", "rose"),
-        diffAddedBg: S("addedBg", "addedBg"), diffRemovedBg: S("removedBg", "removedBg"),
-        diffContextBg: S("panel", "panel"), diffLineNumber: S("line", "line"),
-        diffAddedLineNumberBg: S("addedBg", "addedBg"), diffRemovedLineNumberBg: S("removedBg", "removedBg"),
-        markdownText: S("ink", "ink"), markdownHeading: S("glow", "haze"),
-        markdownLink: S("cyan", "cyan"), markdownLinkText: S("mint", "mint"),
-        markdownCode: S("mint", "mint"), markdownBlockQuote: S("inkSoft", "inkSoft"),
-        markdownEmph: S("amber", "amber"), markdownStrong: S("cyan", "cyan"),
-        markdownHorizontalRule: S("line", "line"), markdownListItem: S("glow", "haze"),
-        markdownListEnumeration: S("cyan", "cyan"), markdownImage: S("cyan", "cyan"),
-        markdownImageText: S("mint", "mint"), markdownCodeBlock: S("ink", "ink"),
-        syntaxComment: S("inkSoft", "inkSoft"), syntaxKeyword: S("haze", "haze"),
-        syntaxFunction: S("glow", "glow"), syntaxVariable: S("cyan", "cyan"),
-        syntaxString: S("mint", "mint"), syntaxNumber: S("amber", "amber"),
-        syntaxType: S("cyan", "cyan"), syntaxOperator: S("haze", "haze"),
+        border: S("line", "line"),
+        borderActive: S("lineHot", "lineHot"),
+        borderSubtle: S("line", "line"),
+        diffAdded: S("mint", "mint"),
+        diffRemoved: S("rose", "rose"),
+        diffContext: S("lineHot", "line"),
+        diffHunkHeader: S("haze", "haze"),
+        diffHighlightAdded: S("mint", "mint"),
+        diffHighlightRemoved: S("rose", "rose"),
+        diffAddedBg: S("addedBg", "addedBg"),
+        diffRemovedBg: S("removedBg", "removedBg"),
+        diffContextBg: S("panel", "panel"),
+        diffLineNumber: S("line", "line"),
+        diffAddedLineNumberBg: S("addedBg", "addedBg"),
+        diffRemovedLineNumberBg: S("removedBg", "removedBg"),
+        markdownText: S("ink", "ink"),
+        markdownHeading: S("glow", "haze"),
+        markdownLink: S("cyan", "cyan"),
+        markdownLinkText: S("mint", "mint"),
+        markdownCode: S("mint", "mint"),
+        markdownBlockQuote: S("inkSoft", "inkSoft"),
+        markdownEmph: S("amber", "amber"),
+        markdownStrong: S("cyan", "cyan"),
+        markdownHorizontalRule: S("line", "line"),
+        markdownListItem: S("glow", "haze"),
+        markdownListEnumeration: S("cyan", "cyan"),
+        markdownImage: S("cyan", "cyan"),
+        markdownImageText: S("mint", "mint"),
+        markdownCodeBlock: S("ink", "ink"),
+        syntaxComment: S("inkSoft", "inkSoft"),
+        syntaxKeyword: S("haze", "haze"),
+        syntaxFunction: S("glow", "glow"),
+        syntaxVariable: S("cyan", "cyan"),
+        syntaxString: S("mint", "mint"),
+        syntaxNumber: S("amber", "amber"),
+        syntaxType: S("cyan", "cyan"),
+        syntaxOperator: S("haze", "haze"),
         syntaxPunctuation: S("ink", "ink"),
       },
     );
@@ -277,29 +328,55 @@ export function buildPreset(id: string): object | null {
         removedBg: S("#371a22", "#fadde2"),
       },
       {
-        primary: S("mint", "mint"), secondary: S("violet", "violet"), accent: S("lime", "lime"),
-        error: S("rose", "rose"), warning: S("amber", "amber"), success: S("mint", "mint"),
-        info: S("sky", "sky"), text: S("ink", "ink"), textMuted: S("inkSoft", "inkSoft"),
-        background: S("canvas", "canvas"), backgroundPanel: S("panel", "panel"),
+        primary: S("mint", "mint"),
+        secondary: S("violet", "violet"),
+        accent: S("lime", "lime"),
+        error: S("rose", "rose"),
+        warning: S("amber", "amber"),
+        success: S("mint", "mint"),
+        info: S("sky", "sky"),
+        text: S("ink", "ink"),
+        textMuted: S("inkSoft", "inkSoft"),
+        background: S("canvas", "canvas"),
+        backgroundPanel: S("panel", "panel"),
         backgroundElement: S("elem", "elem"),
-        border: S("line", "line"), borderActive: S("lineHot", "lineHot"), borderSubtle: S("line", "line"),
-        diffAdded: S("mint", "mint"), diffRemoved: S("rose", "rose"),
-        diffContext: S("lineHot", "line"), diffHunkHeader: S("violet", "violet"),
-        diffHighlightAdded: S("lime", "lime"), diffHighlightRemoved: S("rose", "rose"),
-        diffAddedBg: S("addedBg", "addedBg"), diffRemovedBg: S("removedBg", "removedBg"),
-        diffContextBg: S("panel", "panel"), diffLineNumber: S("line", "line"),
-        diffAddedLineNumberBg: S("addedBg", "addedBg"), diffRemovedLineNumberBg: S("removedBg", "removedBg"),
-        markdownText: S("ink", "ink"), markdownHeading: S("mint", "mint"),
-        markdownLink: S("sky", "sky"), markdownLinkText: S("lime", "lime"),
-        markdownCode: S("amber", "amber"), markdownBlockQuote: S("inkSoft", "inkSoft"),
-        markdownEmph: S("violet", "violet"), markdownStrong: S("sky", "sky"),
-        markdownHorizontalRule: S("line", "line"), markdownListItem: S("mint", "mint"),
-        markdownListEnumeration: S("violet", "violet"), markdownImage: S("sky", "sky"),
-        markdownImageText: S("lime", "lime"), markdownCodeBlock: S("ink", "ink"),
-        syntaxComment: S("inkSoft", "inkSoft"), syntaxKeyword: S("violet", "violet"),
-        syntaxFunction: S("mint", "mint"), syntaxVariable: S("sky", "sky"),
-        syntaxString: S("lime", "lime"), syntaxNumber: S("amber", "amber"),
-        syntaxType: S("mint", "sky"), syntaxOperator: S("violet", "violet"),
+        border: S("line", "line"),
+        borderActive: S("lineHot", "lineHot"),
+        borderSubtle: S("line", "line"),
+        diffAdded: S("mint", "mint"),
+        diffRemoved: S("rose", "rose"),
+        diffContext: S("lineHot", "line"),
+        diffHunkHeader: S("violet", "violet"),
+        diffHighlightAdded: S("lime", "lime"),
+        diffHighlightRemoved: S("rose", "rose"),
+        diffAddedBg: S("addedBg", "addedBg"),
+        diffRemovedBg: S("removedBg", "removedBg"),
+        diffContextBg: S("panel", "panel"),
+        diffLineNumber: S("line", "line"),
+        diffAddedLineNumberBg: S("addedBg", "addedBg"),
+        diffRemovedLineNumberBg: S("removedBg", "removedBg"),
+        markdownText: S("ink", "ink"),
+        markdownHeading: S("mint", "mint"),
+        markdownLink: S("sky", "sky"),
+        markdownLinkText: S("lime", "lime"),
+        markdownCode: S("amber", "amber"),
+        markdownBlockQuote: S("inkSoft", "inkSoft"),
+        markdownEmph: S("violet", "violet"),
+        markdownStrong: S("sky", "sky"),
+        markdownHorizontalRule: S("line", "line"),
+        markdownListItem: S("mint", "mint"),
+        markdownListEnumeration: S("violet", "violet"),
+        markdownImage: S("sky", "sky"),
+        markdownImageText: S("lime", "lime"),
+        markdownCodeBlock: S("ink", "ink"),
+        syntaxComment: S("inkSoft", "inkSoft"),
+        syntaxKeyword: S("violet", "violet"),
+        syntaxFunction: S("mint", "mint"),
+        syntaxVariable: S("sky", "sky"),
+        syntaxString: S("lime", "lime"),
+        syntaxNumber: S("amber", "amber"),
+        syntaxType: S("mint", "sky"),
+        syntaxOperator: S("violet", "violet"),
         syntaxPunctuation: S("ink", "ink"),
       },
     );
@@ -316,12 +393,20 @@ export type SourceMeta = {
   path?: string;
 };
 
-export type Sidecar = { source: SourceMeta; contentSha256: string; installedAt: string; updateAvailable?: boolean | null };
+export type Sidecar = {
+  source: SourceMeta;
+  contentSha256: string;
+  installedAt: string;
+  updateAvailable?: boolean | null;
+};
 
 const sidecarPath = (name: string): string => path.join(themesDir(), `${name}.market.json`);
 
 function sanitizeName(base: string): string {
-  const n = base.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  const n = base
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
   return NAME_RE.test(n) ? n.slice(0, 63) : "";
 }
 
@@ -398,9 +483,7 @@ export async function install(req: InstallRequest): Promise<{ name: string; path
   }
   let ref = (req.ref ?? "").trim();
   if (!ref) {
-    const info = await ghJson<{ default_branch: string }>(
-      `https://api.github.com/repos/${owner}/${repo}`,
-    );
+    const info = await ghJson<{ default_branch: string }>(`https://api.github.com/repos/${owner}/${repo}`);
     ref = info.default_branch || "main";
   }
   const tree = await ghJson<{ tree: Array<{ path: string; type: string; size?: number }> }>(
@@ -501,7 +584,10 @@ async function remoteSha(car: Sidecar): Promise<string | null> {
   return null;
 }
 
-export async function checkUpdates(): Promise<{ results: Array<Pick<InstalledEntry, "name" | "updateAvailable">>; checkedAt: string }> {
+export async function checkUpdates(): Promise<{
+  results: Array<Pick<InstalledEntry, "name" | "updateAvailable">>;
+  checkedAt: string;
+}> {
   const entries = installedList()
     .map((e) => ({ e, car: readSidecar(e.name) }))
     .filter((x): x is { e: InstalledEntry; car: Sidecar } => {

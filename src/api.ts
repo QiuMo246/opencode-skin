@@ -126,8 +126,7 @@ export const api = {
       handle<{ ok: boolean; applied: string; restartRequired: boolean }>,
     ),
   tuiConfig: () => fetch("/api/themes/__tui/config").then(handle<Record<string, unknown>>),
-  builtinWallpapers: () =>
-    fetch("/api/images/builtin").then(handle<{ wallpapers: WallpaperInfo[] }>),
+  builtinWallpapers: () => fetch("/api/images/builtin").then(handle<{ wallpapers: WallpaperInfo[] }>),
   paletteFromPixels: (width: number, height: number, pixels: string, k = 6) =>
     fetch("/api/images/palette", {
       method: "POST",
@@ -148,8 +147,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }).then(handle<{ ok: boolean; backgroundImage: string; backup: string; note?: string }>),
-  terminalRestore: () =>
-    fetch("/api/terminal/restore", { method: "POST" }).then(handle<{ ok: boolean }>),
+  terminalRestore: () => fetch("/api/terminal/restore", { method: "POST" }).then(handle<{ ok: boolean }>),
   injectorDetect: () => fetch("/api/desktop/injector/detect").then(handle<InjectorDetect>),
   buildSkinPack: (body: {
     id: string;
@@ -170,22 +168,26 @@ export const api = {
       handle<{ ok: boolean; launcher: string; outputTail: string }>,
     ),
   marketCurated: () => fetch("/api/market/curated").then(handle<Curated>),
-  marketOfficialColors: () => fetch("/api/market/official-colors").then(handle<{ colors: Record<string, string[]> }>).then((d) => d.colors),
+  marketOfficialColors: () =>
+    fetch("/api/market/official-colors")
+      .then(handle<{ colors: Record<string, string[]> }>)
+      .then((d) => d.colors),
   marketSearch: (q: string) =>
     fetch(`/api/market/search?q=${encodeURIComponent(q)}`).then(
       handle<{ totalCount: number; repos: RepoHit[] }>,
     ),
-  marketInstall: (body:
-    | { kind: "official"; id: string }
-    | { kind: "preset"; id: string }
-    | { kind: "github"; owner: string; repo: string }) =>
+  marketInstall: (
+    body:
+      | { kind: "official"; id: string }
+      | { kind: "preset"; id: string }
+      | { kind: "github"; owner: string; repo: string },
+  ) =>
     fetch("/api/market/install", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     }).then(handle<{ ok: boolean; name: string; path: string }>),
-  marketInstalled: () =>
-    fetch("/api/market/installed").then(handle<{ themes: InstalledEntry[] }>),
+  marketInstalled: () => fetch("/api/market/installed").then(handle<{ themes: InstalledEntry[] }>),
   marketCheckUpdates: () =>
     fetch("/api/market/check-updates", { method: "POST" }).then(
       handle<{ results: Array<{ name: string; updateAvailable: boolean | null }>; checkedAt: string }>,
@@ -228,8 +230,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ port, format: "jpeg" }),
     }).then(handle<{ ok: boolean; dataUrl: string }>),
-  desktopThemes: () =>
-    fetch("/api/desktop/themes").then(handle<{ themes: DesktopTheme[] }>),
+  desktopThemes: () => fetch("/api/desktop/themes").then(handle<{ themes: DesktopTheme[] }>),
   saveDesktopTheme: (body: { name: string; desc?: string; params: SkinApplyParams }) =>
     fetch("/api/desktop/themes", {
       method: "POST",
@@ -237,5 +238,7 @@ export const api = {
       body: JSON.stringify(body),
     }).then(handle<{ ok: boolean; theme: DesktopTheme }>),
   deleteDesktopTheme: (id: string) =>
-    fetch(`/api/desktop/themes/${encodeURIComponent(id)}`, { method: "DELETE" }).then(handle<{ ok: boolean }>),
+    fetch(`/api/desktop/themes/${encodeURIComponent(id)}`, { method: "DELETE" }).then(
+      handle<{ ok: boolean }>,
+    ),
 };

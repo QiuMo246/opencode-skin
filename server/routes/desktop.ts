@@ -4,7 +4,19 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { detectInjector, buildSkinPack, runInjector } from "../lib/desktop.js";
-import { CDP_PORT_DEFAULT, collectStatus, launchDesktop, isPortUp, closeDesktopInstances, applySkinOnTarget, restoreOnTarget, evaluateOnTarget, captureScreenshotOnTarget, skinHealthCheckOnTarget, type SkinHealth } from "../lib/cdp.js";
+import {
+  CDP_PORT_DEFAULT,
+  collectStatus,
+  launchDesktop,
+  isPortUp,
+  closeDesktopInstances,
+  applySkinOnTarget,
+  restoreOnTarget,
+  evaluateOnTarget,
+  captureScreenshotOnTarget,
+  skinHealthCheckOnTarget,
+  type SkinHealth,
+} from "../lib/cdp.js";
 import { buildSkinEngineJs, normalizeSkinConfig, type SkinApplyParams } from "../lib/desktopSkin.js";
 import { writeFileAtomic } from "../lib/fsio.js";
 import { opencodeConfigDir } from "../lib/paths.js";
@@ -96,7 +108,9 @@ async function pageWsUrls(port: number): Promise<string[]> {
     throw new Error("调试端口未就绪，请先「启动并连接」");
   }
   return (Array.isArray(list) ? list : [])
-    .filter((t: { type?: string; webSocketDebuggerUrl?: string }) => t.type === "page" && !!t.webSocketDebuggerUrl)
+    .filter(
+      (t: { type?: string; webSocketDebuggerUrl?: string }) => t.type === "page" && !!t.webSocketDebuggerUrl,
+    )
     .map((t: { webSocketDebuggerUrl: string }) => t.webSocketDebuggerUrl as string);
 }
 
@@ -128,7 +142,9 @@ router.post("/cdp/apply", async (req, res) => {
     const outcomes = await applyToAllPages(js, port);
     const injected = outcomes.filter((o) => !o.error && o.present).length;
     if (injected === 0) {
-      throw new Error(outcomes.map((o) => `${o.label}: ${o.error ?? "样式节点未出现"}`).join("；") || "注入失败");
+      throw new Error(
+        outcomes.map((o) => `${o.label}: ${o.error ?? "样式节点未出现"}`).join("；") || "注入失败",
+      );
     }
     try {
       const p = lastConfigPath();
@@ -189,7 +205,10 @@ router.post("/cdp/restore", async (req, res) => {
 
 /* ---------- 自动注入守护（参考 opencodedev-skin 的 auto-inject 思路） ---------- */
 
-const watchState: { timer: ReturnType<typeof setInterval> | null; port: number } = { timer: null, port: CDP_PORT_DEFAULT };
+const watchState: { timer: ReturnType<typeof setInterval> | null; port: number } = {
+  timer: null,
+  port: CDP_PORT_DEFAULT,
+};
 
 function watchFlagPath(): string {
   return path.join(path.dirname(lastConfigPath()), "watch.json");
@@ -302,14 +321,142 @@ function migrateLegacyThemes(): void {
 }
 
 const BUILTIN_DESKTOP_THEMES: Array<Omit<DesktopThemeFile, "createdAt">> = [
-  { id: "cream-glass", name: "奶油玻璃", desc: "浅色 · 柔和磨砂", builtin: true, params: { appearance: "light", accentHex: "#d8a7b1", panelAlpha: 0.5, blurPx: 24, titlebarAlpha: 0.4, imgBrightness: 105, imgContrast: 100, imgSaturate: 105, imgOpacity: 1 } },
-  { id: "midnight-frost", name: "暗夜磨砂", desc: "深色 · 冷色玻璃", builtin: true, params: { appearance: "dark", accentHex: "#88c0d0", panelAlpha: 0.62, blurPx: 22, titlebarAlpha: 0.55, imgBrightness: 85, imgContrast: 105, imgSaturate: 100, imgOpacity: 1 } },
-  { id: "minimal-clear", name: "极简透明", desc: "浅色 · 高透低模糊", builtin: true, params: { appearance: "light", accentHex: "#a3be8c", panelAlpha: 0.32, blurPx: 12, titlebarAlpha: 0.25, imgBrightness: 112, imgContrast: 98, imgSaturate: 95, imgOpacity: 1 } },
-  { id: "sunset-rose", name: "落日玫瑰", desc: "深色 · 玫瑰暖调", builtin: true, params: { appearance: "dark", accentHex: "#fb7185", panelAlpha: 0.6, blurPx: 20, titlebarAlpha: 0.5, imgBrightness: 80, imgContrast: 108, imgSaturate: 110, imgOpacity: 1 } },
-  { id: "aurora-teal", name: "极光青夜", desc: "深色 · 峡湾青", builtin: true, params: { appearance: "dark", accentHex: "#8fbcbb", panelAlpha: 0.58, blurPx: 18, titlebarAlpha: 0.48, imgBrightness: 82, imgContrast: 104, imgSaturate: 102, imgOpacity: 1 } },
-  { id: "cedar-mist", name: "雪松晨雾", desc: "浅色 · 雾紫拿铁", builtin: true, params: { appearance: "light", accentHex: "#b48ead", panelAlpha: 0.45, blurPx: 22, titlebarAlpha: 0.35, imgBrightness: 108, imgContrast: 100, imgSaturate: 102, imgOpacity: 1 } },
-  { id: "obsidian-crimson", name: "曜石深红", desc: "深色 · 低亮高对比", builtin: true, params: { appearance: "dark", accentHex: "#bf616a", panelAlpha: 0.7, blurPx: 26, titlebarAlpha: 0.6, imgBrightness: 70, imgContrast: 112, imgSaturate: 96, imgOpacity: 1 } },
-  { id: "moonlight-whisper", name: "月白低语", desc: "浅色 · 极光蓝白", builtin: true, params: { appearance: "light", accentHex: "#5e81ac", panelAlpha: 0.55, blurPx: 30, titlebarAlpha: 0.42, imgBrightness: 118, imgContrast: 96, imgSaturate: 92, imgOpacity: 1 } },
+  {
+    id: "cream-glass",
+    name: "奶油玻璃",
+    desc: "浅色 · 柔和磨砂",
+    builtin: true,
+    params: {
+      appearance: "light",
+      accentHex: "#d8a7b1",
+      panelAlpha: 0.5,
+      blurPx: 24,
+      titlebarAlpha: 0.4,
+      imgBrightness: 105,
+      imgContrast: 100,
+      imgSaturate: 105,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "midnight-frost",
+    name: "暗夜磨砂",
+    desc: "深色 · 冷色玻璃",
+    builtin: true,
+    params: {
+      appearance: "dark",
+      accentHex: "#88c0d0",
+      panelAlpha: 0.62,
+      blurPx: 22,
+      titlebarAlpha: 0.55,
+      imgBrightness: 85,
+      imgContrast: 105,
+      imgSaturate: 100,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "minimal-clear",
+    name: "极简透明",
+    desc: "浅色 · 高透低模糊",
+    builtin: true,
+    params: {
+      appearance: "light",
+      accentHex: "#a3be8c",
+      panelAlpha: 0.32,
+      blurPx: 12,
+      titlebarAlpha: 0.25,
+      imgBrightness: 112,
+      imgContrast: 98,
+      imgSaturate: 95,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "sunset-rose",
+    name: "落日玫瑰",
+    desc: "深色 · 玫瑰暖调",
+    builtin: true,
+    params: {
+      appearance: "dark",
+      accentHex: "#fb7185",
+      panelAlpha: 0.6,
+      blurPx: 20,
+      titlebarAlpha: 0.5,
+      imgBrightness: 80,
+      imgContrast: 108,
+      imgSaturate: 110,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "aurora-teal",
+    name: "极光青夜",
+    desc: "深色 · 峡湾青",
+    builtin: true,
+    params: {
+      appearance: "dark",
+      accentHex: "#8fbcbb",
+      panelAlpha: 0.58,
+      blurPx: 18,
+      titlebarAlpha: 0.48,
+      imgBrightness: 82,
+      imgContrast: 104,
+      imgSaturate: 102,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "cedar-mist",
+    name: "雪松晨雾",
+    desc: "浅色 · 雾紫拿铁",
+    builtin: true,
+    params: {
+      appearance: "light",
+      accentHex: "#b48ead",
+      panelAlpha: 0.45,
+      blurPx: 22,
+      titlebarAlpha: 0.35,
+      imgBrightness: 108,
+      imgContrast: 100,
+      imgSaturate: 102,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "obsidian-crimson",
+    name: "曜石深红",
+    desc: "深色 · 低亮高对比",
+    builtin: true,
+    params: {
+      appearance: "dark",
+      accentHex: "#bf616a",
+      panelAlpha: 0.7,
+      blurPx: 26,
+      titlebarAlpha: 0.6,
+      imgBrightness: 70,
+      imgContrast: 112,
+      imgSaturate: 96,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "moonlight-whisper",
+    name: "月白低语",
+    desc: "浅色 · 极光蓝白",
+    builtin: true,
+    params: {
+      appearance: "light",
+      accentHex: "#5e81ac",
+      panelAlpha: 0.55,
+      blurPx: 30,
+      titlebarAlpha: 0.42,
+      imgBrightness: 118,
+      imgContrast: 96,
+      imgSaturate: 92,
+      imgOpacity: 1,
+    },
+  },
 ];
 
 function ensureBuiltinDesktopThemes(): void {
@@ -339,7 +486,9 @@ router.get("/themes", (_req, res) => {
         /* 跳过损坏文件 */
       }
     }
-    list.sort((a, b) => (a.builtin === b.builtin ? (b.createdAt ?? "").localeCompare(a.createdAt ?? "") : a.builtin ? -1 : 1));
+    list.sort((a, b) =>
+      a.builtin === b.builtin ? (b.createdAt ?? "").localeCompare(a.createdAt ?? "") : a.builtin ? -1 : 1,
+    );
     res.json({ themes: list });
   } catch (e) {
     bad(res, e);
@@ -353,7 +502,11 @@ router.post("/themes", (req, res) => {
     if (!name) throw new Error("主题名称不能为空");
     const params = normalizeSkinConfig(req.body?.params ?? {}) as SkinApplyParams;
     delete (params as Record<string, unknown>).imageDataUrl;
-    const base = name.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-+|-+$/g, "") || "theme";
+    const base =
+      name
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "theme";
     const dir = desktopThemesDir();
     fs.mkdirSync(dir, { recursive: true });
     let id = base;

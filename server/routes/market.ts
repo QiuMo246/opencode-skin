@@ -1,5 +1,14 @@
 import { Router } from "express";
-import { listOfficial, PRESETS, install, installedList, checkUpdates, ghJson, readOfficialColors, refreshOfficialColors } from "../lib/market.js";
+import {
+  listOfficial,
+  PRESETS,
+  install,
+  installedList,
+  checkUpdates,
+  ghJson,
+  readOfficialColors,
+  refreshOfficialColors,
+} from "../lib/market.js";
 import type { InstallRequest } from "../lib/market.js";
 
 const router = Router();

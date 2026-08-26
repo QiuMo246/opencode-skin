@@ -18,7 +18,11 @@ export default function Preview({ theme }: Props) {
 
 function PreviewInner({ theme, mode }: Props & { mode: Mode }) {
   const c = (key: string, kind: "bg" | "fg") =>
-    resolveColor(theme.theme[key]?.[mode], theme.defs, kind === "bg" ? (mode === "dark" ? "#101014" : "#f5f5fa") : mode === "dark" ? "#e6e6ef" : "#1a1b26");
+    resolveColor(
+      theme.theme[key]?.[mode],
+      theme.defs,
+      kind === "bg" ? (mode === "dark" ? "#101014" : "#f5f5fa") : mode === "dark" ? "#e6e6ef" : "#1a1b26",
+    );
 
   const bg = c("background", "bg");
   const panel = c("backgroundPanel", "bg");
@@ -36,7 +40,11 @@ function PreviewInner({ theme, mode }: Props & { mode: Mode }) {
 
       <div
         className="pv-dialog"
-        style={{ background: panel, border: `1px solid ${borderActive}`, boxShadow: `0 8px 24px ${mode === "dark" ? "rgba(0,0,0,.45)" : "rgba(0,0,0,.12)"}` }}
+        style={{
+          background: panel,
+          border: `1px solid ${borderActive}`,
+          boxShadow: `0 8px 24px ${mode === "dark" ? "rgba(0,0,0,.45)" : "rgba(0,0,0,.12)"}`,
+        }}
       >
         <div className="pv-titlebar" style={{ borderBottom: `1px solid ${borderSubtle}` }}>
           <span style={{ color: primary }}>● build</span>
@@ -63,7 +71,10 @@ function PreviewInner({ theme, mode }: Props & { mode: Mode }) {
           </p>
         </div>
 
-        <div className="pv-composer" style={{ background: element, borderTop: `1px solid ${borderSubtle}`, color: muted }}>
+        <div
+          className="pv-composer"
+          style={{ background: element, borderTop: `1px solid ${borderSubtle}`, color: muted }}
+        >
           输入消息…
         </div>
       </div>
@@ -72,7 +83,8 @@ function PreviewInner({ theme, mode }: Props & { mode: Mode }) {
 }
 
 function CodeLine({ theme, mode }: { theme: TuiThemeJson; mode: Mode }) {
-  const s = (key: string) => resolveColor(theme.theme[key]?.[mode], theme.defs, mode === "dark" ? "#9aa0b0" : "#555");
+  const s = (key: string) =>
+    resolveColor(theme.theme[key]?.[mode], theme.defs, mode === "dark" ? "#9aa0b0" : "#555");
   return (
     <pre style={{ margin: 0 }}>
       <code>
@@ -86,7 +98,10 @@ function CodeLine({ theme, mode }: { theme: TuiThemeJson; mode: Mode }) {
         <span style={{ color: s("syntaxType") }}>port</span>
         <span style={{ color: s("syntaxPunctuation") }}>: </span>
         <span style={{ color: s("syntaxNumber") }}>5175</span>
-        <span style={{ color: s("syntaxPunctuation") }}>,{"\n"}{"}"})</span>
+        <span style={{ color: s("syntaxPunctuation") }}>
+          ,{"\n"}
+          {"}"})
+        </span>
         {"\n  "}
         <span style={{ color: s("syntaxString") }}>"listening..."</span>
       </code>
@@ -128,7 +143,18 @@ function DiffLine({
 
   return (
     <div style={{ background: bg, display: "flex" }}>
-      <span style={{ background: numBg, color: v("diffLineNumber", "#888"), width: 26, textAlign: "right", paddingRight: 6, flexShrink: 0 }}>{n}</span>
+      <span
+        style={{
+          background: numBg,
+          color: v("diffLineNumber", "#888"),
+          width: 26,
+          textAlign: "right",
+          paddingRight: 6,
+          flexShrink: 0,
+        }}
+      >
+        {n}
+      </span>
       <span style={{ color: fg, padding: "0 8px", whiteSpace: "pre" }}>
         {sign}
         {text}

@@ -170,12 +170,28 @@ export function buildSlotMap(swatches: Swatch[]): SlotMap {
   const lAddBg = mix(hueColor(145, 0.5, 0.82), lBg, 0.55);
   const lRemBg = mix(hueColor(4, 0.5, 0.84), lBg, 0.55);
 
-  put("diffAdded", ensureContrast(hueColor(145, 0.55, 0.68), dBg, 4.5), ensureContrast(hueColor(145, 0.58, 0.38), lBg, 4.5));
-  put("diffRemoved", ensureContrast(hueColor(4, 0.55, 0.7), dBg, 4.5), ensureContrast(hueColor(4, 0.58, 0.42), lBg, 4.5));
+  put(
+    "diffAdded",
+    ensureContrast(hueColor(145, 0.55, 0.68), dBg, 4.5),
+    ensureContrast(hueColor(145, 0.58, 0.38), lBg, 4.5),
+  );
+  put(
+    "diffRemoved",
+    ensureContrast(hueColor(4, 0.55, 0.7), dBg, 4.5),
+    ensureContrast(hueColor(4, 0.58, 0.42), lBg, 4.5),
+  );
   put("diffContext", dMuted, lMuted);
   put("diffHunkHeader", hueColor(215, 0.5, 0.72), hueColor(215, 0.6, 0.38));
-  put("diffHighlightAdded", withLightness(slots.diffAdded.dark, 0.78), withLightness(slots.diffAdded.light, 0.3));
-  put("diffHighlightRemoved", withLightness(slots.diffRemoved.dark, 0.78), withLightness(slots.diffRemoved.light, 0.32));
+  put(
+    "diffHighlightAdded",
+    withLightness(slots.diffAdded.dark, 0.78),
+    withLightness(slots.diffAdded.light, 0.3),
+  );
+  put(
+    "diffHighlightRemoved",
+    withLightness(slots.diffRemoved.dark, 0.78),
+    withLightness(slots.diffRemoved.light, 0.32),
+  );
   put("diffAddedBg", dAddBg, lAddBg);
   put("diffRemovedBg", dRemBg, lRemBg);
   put("diffContextBg", mix(dPanel, dBg, 0.5), lPanel);
@@ -239,7 +255,11 @@ export type DesktopSeeds = {
 const FALLBACK = "#888888";
 
 /** 把槽位值解析成 hex：支持 hex/引用名/ANSI/none，无法解析时回退中性灰。 */
-export function resolveToHex(value: string | number | undefined, defs: Record<string, string> = {}, seen = new Set<string>()): string {
+export function resolveToHex(
+  value: string | number | undefined,
+  defs: Record<string, string> = {},
+  seen = new Set<string>(),
+): string {
   if (value === undefined) return FALLBACK;
   if (typeof value === "number") return ANSI[Math.max(0, Math.min(255, Math.round(value)))];
   const v = String(value).trim();
@@ -256,8 +276,7 @@ export function buildDesktopSeeds(
   slots: Record<string, { dark?: string; light?: string }>,
   defs: Record<string, string> = {},
 ): { light: DesktopSeeds; dark: DesktopSeeds } {
-  const pick = (key: string, side: "dark" | "light"): string =>
-    resolveToHex(slots[key]?.[side], defs);
+  const pick = (key: string, side: "dark" | "light"): string => resolveToHex(slots[key]?.[side], defs);
   const mk = (side: "dark" | "light"): DesktopSeeds => ({
     neutral: pick("background", side),
     primary: pick("primary", side),
@@ -274,20 +293,30 @@ export function buildDesktopSeeds(
 
 export const ANSI: string[] = (() => {
   const out = [
-    "#000000", "#800000", "#008000", "#808000",
-    "#000080", "#800080", "#008080", "#c0c0c0",
-    "#808080", "#ff0000", "#00ff00", "#ffff00",
-    "#0000ff", "#ff00ff", "#00ffff", "#ffffff",
+    "#000000",
+    "#800000",
+    "#008000",
+    "#808000",
+    "#000080",
+    "#800080",
+    "#008080",
+    "#c0c0c0",
+    "#808080",
+    "#ff0000",
+    "#00ff00",
+    "#ffff00",
+    "#0000ff",
+    "#ff00ff",
+    "#00ffff",
+    "#ffffff",
   ];
   const lv = [0, 95, 135, 175, 215, 255];
   for (let r = 0; r < 6; r++)
     for (let g = 0; g < 6; g++)
-      for (let b = 0; b < 6; b++)
-        out.push(rgbToHex({ r: lv[r], g: lv[g], b: lv[b] }));
+      for (let b = 0; b < 6; b++) out.push(rgbToHex({ r: lv[r], g: lv[g], b: lv[b] }));
   for (let i = 0; i < 24; i++) {
     const v = 8 + i * 10;
     out.push(rgbToHex({ r: v, g: v, b: v }));
   }
   return out;
 })();
-

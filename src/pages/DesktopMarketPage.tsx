@@ -30,12 +30,19 @@ export default function DesktopMarketPage() {
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const refreshThemes = useCallback(() => {
-    api.desktopThemes().then((d) => setThemes(d.themes)).catch(() => {});
+    api
+      .desktopThemes()
+      .then((d) => setThemes(d.themes))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     refreshThemes();
-    if (!curated) api.marketCurated().then(setCurated).catch(() => {});
+    if (!curated)
+      api
+        .marketCurated()
+        .then(setCurated)
+        .catch(() => {});
   }, [curated, refreshThemes]);
 
   async function applyTheme(key: string, params: Partial<SkinApplyParams>, okText: string) {
@@ -67,13 +74,17 @@ export default function DesktopMarketPage() {
   return (
     <div className="page">
       <h2>桌面端 · 主题市场</h2>
-      <p className="page-desc">把官方主题配色一键映射为桌面端玻璃皮肤，或从精选主题库直接应用。壁纸保持不变。</p>
+      <p className="page-desc">
+        把官方主题配色一键映射为桌面端玻璃皮肤，或从精选主题库直接应用。壁纸保持不变。
+      </p>
       <DesktopStatusBar />
       {msg && <div className={msg.kind === "ok" ? "alert alert-ok" : "alert alert-err"}>{msg.text}</div>}
       {syncMsg && !msg && <span className="auto-msg">{syncMsg}</span>}
 
       <h3 className="dtm-sec-title">官方配色映射</h3>
-      <p className="page-desc">取官方主题的主色为强调色，按背景亮度自动选择深浅模式，共 {curated?.official.length ?? "…"} 个主题。</p>
+      <p className="page-desc">
+        取官方主题的主色为强调色，按背景亮度自动选择深浅模式，共 {curated?.official.length ?? "…"} 个主题。
+      </p>
       <div className="grid mk-grid">
         {(curated?.official ?? []).map((t) => {
           const colors = themeColors[t.id];
@@ -94,7 +105,9 @@ export default function DesktopMarketPage() {
               <footer>
                 <button
                   disabled={!mapped || busyKey === `official:${t.id}`}
-                  onClick={() => mapped && void applyTheme(`official:${t.id}`, mapped, `已应用「${t.id}」配色`)}
+                  onClick={() =>
+                    mapped && void applyTheme(`official:${t.id}`, mapped, `已应用「${t.id}」配色`)
+                  }
                 >
                   {busyKey === `official:${t.id}` ? "应用中…" : "应用此配色"}
                 </button>
@@ -117,7 +130,10 @@ export default function DesktopMarketPage() {
               <span style={{ background: t.params.accentHex ?? "#88c0d0" }} />
               <span style={{ background: t.params.appearance === "light" ? "#eceff4" : "#2e3440" }} />
             </div>
-            <p className="card-meta">{t.desc || `${t.params.appearance === "light" ? "浅色" : "深色"} · 面板 ${Math.round((t.params.panelAlpha ?? 0.7) * 100)}%`}</p>
+            <p className="card-meta">
+              {t.desc ||
+                `${t.params.appearance === "light" ? "浅色" : "深色"} · 面板 ${Math.round((t.params.panelAlpha ?? 0.7) * 100)}%`}
+            </p>
             <footer>
               <button
                 disabled={busyKey === `theme:${t.id}`}
@@ -126,7 +142,11 @@ export default function DesktopMarketPage() {
                 {busyKey === `theme:${t.id}` ? "应用中…" : "一键应用"}
               </button>
               {!t.builtin && (
-                <button className="mk-link btn-as-link" disabled={busyKey === `del:${t.id}`} onClick={() => void removeTheme(t)}>
+                <button
+                  className="mk-link btn-as-link"
+                  disabled={busyKey === `del:${t.id}`}
+                  onClick={() => void removeTheme(t)}
+                >
                   删除
                 </button>
               )}

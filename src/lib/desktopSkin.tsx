@@ -47,7 +47,8 @@ export function DesktopSkinProvider({ children }: { children: ReactNode }) {
 
   /* 回填上次应用的配置，保证表单与实际生效的皮肤一致 */
   useEffect(() => {
-    api.cdpStatus()
+    api
+      .cdpStatus()
       .then((s) => {
         const la = s.lastApplied;
         if (!la) return;
@@ -77,7 +78,8 @@ export function DesktopSkinProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!dirtyRef.current) return;
     const t = setTimeout(() => {
-      api.cdpApply({ ...params, imageDataUrl: bgRef.current ?? undefined })
+      api
+        .cdpApply({ ...params, imageDataUrl: bgRef.current ?? undefined })
         .then((r) => setSyncMsg(applyResultMsg(r, "已实时同步")))
         .catch((e) => setSyncMsg(`实时同步失败：${e instanceof Error ? e.message : e}`));
     }, 400);

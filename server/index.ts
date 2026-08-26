@@ -52,7 +52,7 @@ if (fs.existsSync(distDir)) {
 
 /* 错误处理器必须最后注册，才能兜住静态资源等路径抛出的异常 */
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("[oc-skin-studio] 未处理异常:", err instanceof Error ? err.stack ?? err.message : err);
+  console.error("[oc-skin-studio] 未处理异常:", err instanceof Error ? (err.stack ?? err.message) : err);
   if (!res.headersSent) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }

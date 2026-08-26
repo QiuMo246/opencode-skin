@@ -31,16 +31,17 @@ const add = (
 const SHADERS: Record<string, Shader> = {
   aurora: (x, y) => {
     let c = mix3([11, 16, 38], [18, 58, 74], y);
-    const w1 = Math.sin((x * 6.28 + y * 2.4)) * 0.5 + 0.5;
-    const w2 = Math.sin((x * 12.56 - y * 4.2) + 1.7) * 0.5 + 0.5;
+    const w1 = Math.sin(x * 6.28 + y * 2.4) * 0.5 + 0.5;
+    const w2 = Math.sin(x * 12.56 - y * 4.2 + 1.7) * 0.5 + 0.5;
     c = add(c, [60, 230, 160], 0.22 * w1 * Math.pow(1 - y, 1.6));
     c = add(c, [150, 110, 240], 0.18 * w2 * Math.pow(1 - y, 2.2));
     return c;
   },
   sunset: (x, y) => {
-    let c = y < 0.55
-      ? mix3([53, 35, 93], [179, 70, 110], y / 0.55)
-      : mix3([179, 70, 110], [255, 154, 90], (y - 0.55) / 0.45);
+    let c =
+      y < 0.55
+        ? mix3([53, 35, 93], [179, 70, 110], y / 0.55)
+        : mix3([179, 70, 110], [255, 154, 90], (y - 0.55) / 0.45);
     const d = Math.hypot(x - 0.5, (y - 0.6) * 1.4);
     c = add(c, [255, 220, 160], Math.max(0, 0.9 - d * 2.4));
     return c;
@@ -59,8 +60,8 @@ const SHADERS: Record<string, Shader> = {
   },
   neon: (x, y) => {
     let c: [number, number, number] = [10, 7, 20];
-    const d1 = Math.abs((x * 0.9 - y + 0.15) % 1 - 0.5);
-    const d2 = Math.abs((x * 0.7 + y * 0.6 - 0.2) % 1 - 0.5);
+    const d1 = Math.abs(((x * 0.9 - y + 0.15) % 1) - 0.5);
+    const d2 = Math.abs(((x * 0.7 + y * 0.6 - 0.2) % 1) - 0.5);
     c = add(c, [230, 40, 160], Math.max(0, 0.5 - d1 * 3));
     c = add(c, [40, 200, 240], Math.max(0, 0.5 - d2 * 3));
     return mix3(c, [5, 4, 12], y * 0.35);
@@ -132,10 +133,3 @@ export function ensureWallpapers(): WallpaperInfo[] {
   }
   return out;
 }
-
-
-
-
-
-
-

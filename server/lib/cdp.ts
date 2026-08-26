@@ -110,11 +110,14 @@ export async function launchDesktop(port: number): Promise<{ launched: boolean; 
     windowsHide: true,
   });
   launcher.unref();
-  const deadline = Date.now() + 15000;  while (Date.now() < deadline) {
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline) {
     if (await isPortUp(port)) return { launched: true, exePath };
     await new Promise((r) => setTimeout(r, 500));
   }
-  throw new Error("已尝试启动 Desktop 但调试端口未就绪；若已有实例在运行，请先完全退出所有 OpenCode 窗口再试");
+  throw new Error(
+    "已尝试启动 Desktop 但调试端口未就绪；若已有实例在运行，请先完全退出所有 OpenCode 窗口再试",
+  );
 }
 
 export async function closeDesktopInstances(gracefulMs = 2500): Promise<{ closed: number; forced: number }> {
@@ -123,7 +126,10 @@ export async function closeDesktopInstances(gracefulMs = 2500): Promise<{ closed
   const name = path.basename(exe);
   const countProcs = (): number => {
     try {
-      const out = spawnSync("tasklist", ["/FI", `IMAGENAME eq ${name}`, "/FO", "CSV", "/NH"], { encoding: "utf8", windowsHide: true });
+      const out = spawnSync("tasklist", ["/FI", `IMAGENAME eq ${name}`, "/FO", "CSV", "/NH"], {
+        encoding: "utf8",
+        windowsHide: true,
+      });
       const pat = new RegExp(`^"${name.replace(/[.\\]/g, "\\$&")}"`, "m");
       return (out.stdout ?? "").split(/\r?\n/).filter((l) => pat.test(l)).length;
     } catch {
@@ -146,10 +152,18 @@ export async function closeDesktopInstances(gracefulMs = 2500): Promise<{ closed
   return { closed: before, forced };
 }
 
-type CdpResponse = { id: number; result?: { result?: { value?: unknown }; exceptionDetails?: { text?: string } }; error?: { message?: string } };
+type CdpResponse = {
+  id: number;
+  result?: { result?: { value?: unknown }; exceptionDetails?: { text?: string } };
+  error?: { message?: string };
+};
 
 /** 单连接内顺序执行多条 CDP 命令。 */
-async function withCdp<T>(wsUrl: string, timeoutMs: number, fn: (send: (method: string, params?: object) => Promise<CdpResponse["result"]>) => Promise<T>): Promise<T> {
+async function withCdp<T>(
+  wsUrl: string,
+  timeoutMs: number,
+  fn: (send: (method: string, params?: object) => Promise<CdpResponse["result"]>) => Promise<T>,
+): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     let ws: WebSocket;
     try {
@@ -160,7 +174,10 @@ async function withCdp<T>(wsUrl: string, timeoutMs: number, fn: (send: (method: 
     }
     let settled = false;
     let nextId = 1;
-    const pending = new Map<number, { resolve: (v: CdpResponse["result"]) => void; reject: (e: Error) => void }>();
+    const pending = new Map<
+      number,
+      { resolve: (v: CdpResponse["result"]) => void; reject: (e: Error) => void }
+    >();
     const finish = (fn2: () => void) => {
       if (settled) return;
       settled = true;
@@ -179,7 +196,12 @@ async function withCdp<T>(wsUrl: string, timeoutMs: number, fn: (send: (method: 
         pending.set(id, { resolve: res2, reject: rej2 });
         ws.send(JSON.stringify({ id, method, params: params ?? {} }));
       });
-    ws.on("open", () => fn(send).then((v) => finish(() => resolve(v)), (e) => finish(() => reject(e))));
+    ws.on("open", () =>
+      fn(send).then(
+        (v) => finish(() => resolve(v)),
+        (e) => finish(() => reject(e)),
+      ),
+    );
     ws.on("message", (raw) => {
       let msg: CdpResponse;
       try {
@@ -191,7 +213,8 @@ async function withCdp<T>(wsUrl: string, timeoutMs: number, fn: (send: (method: 
       if (!p) return;
       pending.delete(msg.id);
       if (msg.error) p.reject(new Error(`CDP 错误: ${msg.error.message ?? "unknown"}`));
-      else if (msg.result?.exceptionDetails) p.reject(new Error(`页面执行异常: ${msg.result.exceptionDetails.text ?? "unknown"}`));
+      else if (msg.result?.exceptionDetails)
+        p.reject(new Error(`页面执行异常: ${msg.result.exceptionDetails.text ?? "unknown"}`));
       else p.resolve(msg.result);
     });
     ws.on("error", (err) => finish(() => reject(err)));
@@ -205,11 +228,17 @@ async function withCdp<T>(wsUrl: string, timeoutMs: number, fn: (send: (method: 
 const PRESENT_CHECK = "!!document.getElementById('__oc_studio_style__')";
 
 /** 应用皮肤：立即注入 + 注册新文档重放，并校验样式节点存在。 */
-export async function applySkinOnTarget(wsUrl: string, js: string): Promise<{ immediate: unknown; present: boolean; registered: boolean }> {
+export async function applySkinOnTarget(
+  wsUrl: string,
+  js: string,
+): Promise<{ immediate: unknown; present: boolean; registered: boolean }> {
   return withCdp(wsUrl, 20000, async (send) => {
-    const immediate = (await send("Runtime.evaluate", { expression: js, returnByValue: true }))?.result?.value;
-    const r = (await send("Page.addScriptToEvaluateOnNewDocument", { source: js })) as { identifier?: string } | undefined;
-    const chk = (await send("Runtime.evaluate", { expression: PRESENT_CHECK, returnByValue: true }))?.result?.value;
+    const immediate = (await send("Runtime.evaluate", { expression: js, returnByValue: true }))?.result
+      ?.value;
+    const r = (await send("Page.addScriptToEvaluateOnNewDocument", { source: js })) as
+      { identifier?: string } | undefined;
+    const chk = (await send("Runtime.evaluate", { expression: PRESENT_CHECK, returnByValue: true }))?.result
+      ?.value;
     return { immediate, present: chk === true, registered: !!r?.identifier };
   });
 }
@@ -231,8 +260,11 @@ export type SkinHealth = { ok: boolean; unknown?: boolean; bg?: string; sel?: st
 
 /** 健康检查：验证关键表面确实是半透明（类名变化/被覆盖时能及时发现）。 */
 export async function skinHealthCheckOnTarget(wsUrl: string): Promise<SkinHealth> {
-  const v = await withCdp(wsUrl, 10000, async (send) =>
-    (await send("Runtime.evaluate", { expression: HEALTH_CHECK_JS, returnByValue: true }))?.result?.value,
+  const v = await withCdp(
+    wsUrl,
+    10000,
+    async (send) =>
+      (await send("Runtime.evaluate", { expression: HEALTH_CHECK_JS, returnByValue: true }))?.result?.value,
   );
   try {
     const parsed = JSON.parse(String(v)) as SkinHealth;
@@ -244,7 +276,8 @@ export async function skinHealthCheckOnTarget(wsUrl: string): Promise<SkinHealth
 
 export async function restoreOnTarget(wsUrl: string): Promise<unknown> {
   return withCdp(wsUrl, 15000, async (send) => {
-    const value = (await send("Runtime.evaluate", { expression: RESTORE_JS_SOURCE, returnByValue: true }))?.result?.value;
+    const value = (await send("Runtime.evaluate", { expression: RESTORE_JS_SOURCE, returnByValue: true }))
+      ?.result?.value;
     return value;
   });
 }
@@ -258,7 +291,11 @@ document.documentElement.classList.remove("oc-studio-skin");
 return "ok";
 })()`;
 /** 截取页面当前帧（fromSurface 强制渲染器出帧，窗口被遮挡也能拿到最新画面）。 */
-export async function captureScreenshotOnTarget(wsUrl: string, format: "png" | "jpeg" = "png", quality = 70): Promise<string> {
+export async function captureScreenshotOnTarget(
+  wsUrl: string,
+  format: "png" | "jpeg" = "png",
+  quality = 70,
+): Promise<string> {
   return withCdp(wsUrl, 15000, async (send) => {
     const params: Record<string, unknown> = { format, fromSurface: true };
     if (format === "jpeg") params.quality = quality;
@@ -268,9 +305,14 @@ export async function captureScreenshotOnTarget(wsUrl: string, format: "png" | "
   });
 }
 
-export async function evaluateOnTarget(wsUrl: string, expression: string, timeoutMs = 8000): Promise<unknown> {
-  return withCdp(wsUrl, timeoutMs, async (send) =>
-    (await send("Runtime.evaluate", { expression, returnByValue: true }))?.result?.value,
+export async function evaluateOnTarget(
+  wsUrl: string,
+  expression: string,
+  timeoutMs = 8000,
+): Promise<unknown> {
+  return withCdp(
+    wsUrl,
+    timeoutMs,
+    async (send) => (await send("Runtime.evaluate", { expression, returnByValue: true }))?.result?.value,
   );
 }
-

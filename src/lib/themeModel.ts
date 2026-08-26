@@ -162,17 +162,28 @@ function resolveColorInner(
 /** 与服务端 ANSI 表（server/lib/palette.ts）一致的 256 色回退，保证预览与实际渲染一致。 */
 const ANSI_256: string[] = (() => {
   const out = [
-    "#000000", "#800000", "#008000", "#808000",
-    "#000080", "#800080", "#008080", "#c0c0c0",
-    "#808080", "#ff0000", "#00ff00", "#ffff00",
-    "#0000ff", "#ff00ff", "#00ffff", "#ffffff",
+    "#000000",
+    "#800000",
+    "#008000",
+    "#808000",
+    "#000080",
+    "#800080",
+    "#008080",
+    "#c0c0c0",
+    "#808080",
+    "#ff0000",
+    "#00ff00",
+    "#ffff00",
+    "#0000ff",
+    "#ff00ff",
+    "#00ffff",
+    "#ffffff",
   ];
   const toHex = ({ r, g, b }: { r: number; g: number; b: number }): string =>
     "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
   const lv = [0, 95, 135, 175, 215, 255];
   for (let r = 0; r < 6; r++)
-    for (let g = 0; g < 6; g++)
-      for (let b = 0; b < 6; b++) out.push(toHex({ r: lv[r], g: lv[g], b: lv[b] }));
+    for (let g = 0; g < 6; g++) for (let b = 0; b < 6; b++) out.push(toHex({ r: lv[r], g: lv[g], b: lv[b] }));
   for (let i = 0; i < 24; i++) {
     const v = 8 + i * 10;
     out.push(toHex({ r: v, g: v, b: v }));
@@ -187,4 +198,17 @@ function ansiFallback(n: number, fallback: string): string {
 export function fallbackFor(mode: "dark" | "light", kind: "bg" | "fg"): string {
   if (mode === "dark") return kind === "bg" ? "#101014" : "#e6e6ef";
   return kind === "bg" ? "#f5f5fa" : "#1a1b26";
+}
+
+/** 序列化为可写入 ~/.config/opencode/themes/<name>.json 的结构。
+ * 遍历全部槽位（而非 ALL_SLOTS），保留主题文件里的未知键，避免保存即丢数据。 */
+export function toThemeJson(theme: TuiThemeJson): object {
+  const out: Record<string, unknown> = { $schema: SCHEMA_URL };
+  if (theme.defs && Object.keys(theme.defs).length > 0) out.defs = theme.defs;
+  const slots: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(theme.theme)) {
+    if (v && (v.dark !== undefined || v.light !== undefined)) slots[key] = v;
+  }
+  out.theme = slots;
+  return out;
 }

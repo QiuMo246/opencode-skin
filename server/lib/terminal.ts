@@ -18,7 +18,13 @@ const CANDIDATES = (): string[] => {
   const la = process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local");
   return [
     path.join(la, "Packages", "Microsoft.WindowsTerminal_8wekyb3d8bbwe", "LocalState", "settings.json"),
-    path.join(la, "Packages", "Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe", "LocalState", "settings.json"),
+    path.join(
+      la,
+      "Packages",
+      "Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe",
+      "LocalState",
+      "settings.json",
+    ),
     path.join(la, "Microsoft", "Windows Terminal", "settings.json"),
   ];
 };
@@ -170,8 +176,3 @@ export function restoreWt(): Record<string, unknown> {
   fs.copyFileSync(bp, settingsPath);
   return { ok: true, restored: settingsPath, backupKept: bp };
 }
-
-
-
-
-
