@@ -31,7 +31,7 @@
 ### 桌面端皮肤注入（M6）
 
 - 内置 CDP 注入器，无需外部仓库：自动探测 OpenCode Desktop 安装路径，一键带调试端口启动（可选先退出旧实例）
-- **常驻皮肤引擎**（参考 opencodedev-skin 架构）：
+- **常驻皮肤引擎**（架构参考社区项目 [opencodedev-skin](https://github.com/wpz1212ccl/opencodedev-skin)，MIT）：
   - 页面刷新 / 切换会话 → `Page.addScriptToEvaluateOnNewDocument` + localStorage 自动重放
   - 官方 UI 重渲染破坏样式 → MutationObserver 秒级自愈
   - Desktop 完全重启 → 服务端「自动注入守护」每 5 秒巡检，发现皮肤丢失立即重注
@@ -124,3 +124,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 - 应用或修改主题后需**重启 opencode** 才会生效（TUI 启动时读取主题）
 - Windows Terminal 写入前会自动备份原 settings.json，可在工作台一键还原
 - GitHub 相关功能依赖网络；未检测到 Windows Terminal / 注入器时对应面板自动置灰降级
+
+## License
+
+[MIT](LICENSE)

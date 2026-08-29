@@ -109,7 +109,7 @@ opencode 存在独立的**桌面版应用**（Windows .exe 安装），其主题
 ### 2.6 参考项目：opencodedev-skin（CDP 注入方案，已验证可行）
 
 仓库：<https://github.com/wpz1212ccl/opencodedev-skin>（MIT，JavaScript，
-Windows + macOS，本地参考材料见 `docs/reference/opencodedev-skin/`）
+Windows + macOS；本地参考材料已移出仓库，发布版不含第三方文档）
 
 **原理**：OpenCode Desktop 是 Electron 应用。该项目让应用以
 `--remote-debugging-port=9335` 启动，通过 Chrome DevTools Protocol 的 WebSocket
@@ -514,7 +514,7 @@ opencode_skin/
 ### 10.3 审查记录
 
 - 检测器（regex 降级模式）：0 findings。
-- 截图存档：.impeccable/review/（desktop 1440px 四页 + mobile 390px）。
+- 截图存档：原存于 .impeccable/review/（desktop 1440px 四页 + mobile 390px），发布前已从仓库移除。
 - 审查方式说明：本环境无 impeccable-finish-reviewer 子代理，以构建线程外
   的人工核查（分批截图 + 修复批次 + 复检）替代，此为降级路径。
 
