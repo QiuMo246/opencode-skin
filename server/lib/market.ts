@@ -433,6 +433,10 @@ export type Sidecar = {
 
 const sidecarPath = (name: string): string => path.join(themesDir(), `${name}.market.json`);
 
+/** 落盘/远程比对的统一形态：$schema 固定前置，保证两处序列化逐字节一致。 */
+const TUI_SCHEMA_URL = "https://opencode.ai/theme.json";
+const withSchema = (obj: object): object => ({ $schema: TUI_SCHEMA_URL, ...obj });
+
 function sanitizeName(base: string): string {
   const n = base
     .toLowerCase()
@@ -458,8 +462,8 @@ async function writeInstalled(
   themeObj: object,
   source: SourceMeta,
 ): Promise<{ name: string; path: string }> {
-  const withSchema = { $schema: "https://opencode.ai/theme.json", ...(themeObj as Record<string, unknown>) };
-  const check = validateTuiTheme(withSchema);
+  const withSchemaObj = withSchema(themeObj);
+  const check = validateTuiTheme(withSchemaObj);
   if (!check.ok) {
     throw new Error(`schema 校验失败: ${check.errors.slice(0, 3).join("; ")}`);
   }
@@ -467,7 +471,7 @@ async function writeInstalled(
   const name = uniqueName(sanitizeName(desiredName));
   if (!name) throw new Error(`无法从 "${desiredName}" 生成合法主题名`);
   const p = path.join(themesDir(), `${name}.json`);
-  const text = JSON.stringify(withSchema, null, 2) + "\n";
+  const text = JSON.stringify(withSchemaObj, null, 2) + "\n";
   writeFileAtomic(p, text);
   const car: Sidecar = { source, contentSha256: sha256(text), installedAt: new Date().toISOString() };
   writeFileAtomic(sidecarPath(name), JSON.stringify(car, null, 2) + "\n");
@@ -599,15 +603,17 @@ export function installedList(): InstalledEntry[] {
 async function remoteSha(car: Sidecar): Promise<string | null> {
   const s = car.source;
   try {
+    /* 与 writeInstalled 相同：补 $schema 前置后再序列化。
+     * 直接 stringify 远程原文的话，缺 $schema（或位置不同）的文件装完立刻误报“有更新”。 */
     if (s.kind === "official" && s.id) {
       const url = `https://raw.githubusercontent.com/${OFFICIAL.owner}/${OFFICIAL.repo}/${OFFICIAL.ref}/${OFFICIAL.dir}/${s.id}.json`;
-      return sha256(JSON.stringify(parseThemeCandidate(await ghText(url), s.id), null, 2) + "\n");
+      return sha256(JSON.stringify(withSchema(parseThemeCandidate(await ghText(url), s.id)), null, 2) + "\n");
     }
     if (s.kind === "github" && s.owner && s.repo && s.path && s.ref) {
       const raw = await ghText(
         `https://raw.githubusercontent.com/${s.owner}/${s.repo}/${encodeURIComponent(s.ref)}/${s.path}`,
       );
-      return sha256(JSON.stringify(parseThemeCandidate(raw, s.path), null, 2) + "\n");
+      return sha256(JSON.stringify(withSchema(parseThemeCandidate(raw, s.path)), null, 2) + "\n");
     }
   } catch {
     return null;

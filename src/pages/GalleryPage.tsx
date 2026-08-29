@@ -118,7 +118,11 @@ export default function GalleryPage() {
 
   const makeSkinPack = async () => {
     if (!payload) return;
-    const id = (skinId.trim() || themeName.trim() || "my-skin").toLowerCase().replace(/[^a-z0-9-]+/g, "-");
+    const id =
+      (skinId.trim() || themeName.trim() || "my-skin")
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "my-skin";
     try {
       const r = await api.buildSkinPack({
         id,

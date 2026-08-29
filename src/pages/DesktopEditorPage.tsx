@@ -17,11 +17,14 @@ const PreviewPanel = memo(function PreviewPanel({
   const wb = params.windowBlurPx ?? DEFAULT_BLUR_PX;
   const isTransparent = (params.windowAlpha ?? 1) < 1;
   const wScale = isTransparent ? (params.windowAlpha ?? 1) : 1;
+  /* 与服务端 cssRulesFor 保持一致：壁纸越不透明，玻璃面纱越轻（imgOpacity=1 时减半） */
+  const veilK = 1 - 0.5 * Math.max(0, Math.min(1, params.imgOpacity ?? 1));
   const baseAlpha = params.appearance === "light" ? 0.72 : 0.78;
-  const panelBgAlpha = Math.max(0.05, baseAlpha * wScale);
+  const panelBgAlpha = Math.max(0.05, baseAlpha * wScale * veilK);
+  const contentAlpha = Math.max(0.03, Math.round(0.1 * wScale * veilK * 1000) / 1000);
   const wallFilter = `brightness(${params.imgBrightness ?? 100}%) contrast(${params.imgContrast ?? 100}%) saturate(${params.imgSaturate ?? 100}%)${wb > 0 ? ` blur(${wb}px)` : ""}`;
-  const panelBlur = wb > 0 ? Math.round(18 + wb * 0.6) : 18;
-  const panelSat = wb > 0 ? Math.min(1.5, 1.1 + wb * 0.015).toFixed(2) : "1.10";
+  const panelBlur = Math.round(18 + wb * 0.6);
+  const panelSat = Math.min(1.6, 1.1 + wb * 0.012).toFixed(2);
   const accentHex = params.accentHex ?? "#88c0d0";
   const hexToRgb = (hex: string) => {
     let h = hex.replace(/^#/, "");
@@ -112,7 +115,7 @@ const PreviewPanel = memo(function PreviewPanel({
               flexDirection: "column",
               gap: 8,
               fontSize: 12.5,
-              background: `rgba(${contentRgb},0.1)`,
+              background: `rgba(${contentRgb},${contentAlpha})`,
             }}
           >
             <p style={{ margin: 0, color: params.appearance === "light" ? "#2d3748" : "#e2e8f0" }}>
@@ -210,7 +213,7 @@ export default function DesktopEditorPage() {
   const load = async (id: string) => {
     const t = installed.find((x) => x.id === id);
     if (!t) return;
-    // 完整覆盖当前参数（保留壁纸，壁纸由壁纸工作台管理）
+    // 完整覆盖当前参数（壁纸图片/视频由壁纸工作台管理，此处不携带）
     update({
       appearance: t.params.appearance,
       accentHex: t.params.accentHex,
@@ -222,6 +225,9 @@ export default function DesktopEditorPage() {
       imgOpacity: t.params.imgOpacity,
       windowAlpha: t.params.windowAlpha,
       windowBlurPx: (t.params as { windowBlurPx?: number }).windowBlurPx,
+      /* 着色参数属于主题本身：不还原的话，上一个主题（或配色映射）的着色会泄漏进来 */
+      panelTint: (t.params as { panelTint?: number }).panelTint ?? 0,
+      contentTint: (t.params as { contentTint?: number }).contentTint ?? 0,
     });
     setName(t.name);
     setSelected(id);
@@ -229,7 +235,14 @@ export default function DesktopEditorPage() {
   };
 
   const newTheme = () => {
-    update({ ...DEFAULT_DT_PARAMS });
+    /* 空白配置：着色一并归零、动态壁纸清空（壁纸图片由壁纸工作台管理） */
+    update({
+      ...DEFAULT_DT_PARAMS,
+      panelTint: 0,
+      contentTint: 0,
+      videoUrl: undefined,
+      videoPoster: undefined,
+    });
     setName("");
     setSelected("");
     flash("已新建空白配置，调整参数后保存为主题");

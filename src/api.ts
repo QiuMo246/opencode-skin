@@ -260,6 +260,10 @@ export const api = {
     if (!lower.endsWith(".mp4") && !lower.endsWith(".webm") && !file.type.startsWith("video/")) {
       throw new Error("仅支持 mp4 / webm 视频文件");
     }
+    /* 与服务端 images.ts 的 MAX_VIDEO_BYTES 一致，超大文件直接本地拒绝，省一次白传 */
+    if (file.size > 100 * 1024 * 1024) {
+      throw new Error("视频超过 100MB 上限");
+    }
     const r = await fetch(`/api/images/video?ext=${ext}`, {
       method: "POST",
       headers: { "Content-Type": `video/${ext}` },

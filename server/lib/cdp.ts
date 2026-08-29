@@ -283,16 +283,33 @@ async function withCdp<T>(
 
 const PRESENT_CHECK = "!!document.getElementById('__oc_studio_style__')";
 
+/** 每个目标最近一次 newDocument 脚本注册的 identifier。编辑页防抖会高频重注，
+ * 不移除旧注册的话脚本会在渲染进程里无限累积（每个都内嵌完整配置+CSS+壁纸 base64），
+ * 刷新时全部重放。restore 时同步清理。 */
+const lastNewDocScript = new Map<string, string>();
+
+async function removeNewDocScript(
+  send: (method: string, params?: object) => Promise<CdpResponse["result"]>,
+  identifier: string | undefined,
+): Promise<void> {
+  if (!identifier) return;
+  /* 标识符可能因页面刷新/目标重建而失效，CDP 报错直接忽略 */
+  await send("Page.removeScriptToEvaluateOnNewDocument", { identifier }).catch(() => undefined);
+}
+
 /** 应用皮肤：立即注入 + 注册新文档重放，并校验样式节点存在。 */
 export async function applySkinOnTarget(
   wsUrl: string,
   js: string,
 ): Promise<{ immediate: unknown; present: boolean; registered: boolean }> {
   return withCdp(wsUrl, 20000, async (send) => {
+    await removeNewDocScript(send, lastNewDocScript.get(wsUrl));
     const immediate = (await send("Runtime.evaluate", { expression: js, returnByValue: true }))?.result
       ?.value;
     const r = (await send("Page.addScriptToEvaluateOnNewDocument", { source: js })) as
       { identifier?: string } | undefined;
+    if (r?.identifier) lastNewDocScript.set(wsUrl, r.identifier);
+    else lastNewDocScript.delete(wsUrl);
     const chk = (await send("Runtime.evaluate", { expression: PRESENT_CHECK, returnByValue: true }))?.result
       ?.value;
     return { immediate, present: chk === true, registered: !!r?.identifier };
@@ -331,7 +348,10 @@ export async function skinHealthCheckOnTarget(wsUrl: string): Promise<SkinHealth
 }
 
 export async function restoreOnTarget(wsUrl: string): Promise<unknown> {
+  const prev = lastNewDocScript.get(wsUrl);
+  lastNewDocScript.delete(wsUrl);
   return withCdp(wsUrl, 15000, async (send) => {
+    await removeNewDocScript(send, prev);
     const value = (await send("Runtime.evaluate", { expression: RESTORE_JS_SOURCE, returnByValue: true }))
       ?.result?.value;
     return value;

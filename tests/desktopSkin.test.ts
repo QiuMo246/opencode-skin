@@ -53,6 +53,14 @@ describe("buildSkinEngineJs", () => {
     expect(js).toContain('"accentHex":"#123456"');
   });
 
+  it("持久化时剔除 cfg.imageDataUrl（壁纸 base64 已在 CSS 内，省 1~2 份 localStorage 拷贝）", () => {
+    const cfg = normalizeSkinConfig({ ...params, imageDataUrl: "data:image/png;base64,AAAA" });
+    const js = buildSkinEngineJs(cfg);
+    expect(js).toContain("delete pc.imageDataUrl");
+    /* 引擎运行时不读 cfg.imageDataUrl，剔除不影响 restore 后的渲染 */
+    expect(js).not.toContain("cfg.imageDataUrl");
+  });
+
   it("内嵌预计算的 CSS 文本（含 @layer 包裹标记）", () => {
     const js = buildSkinEngineJs(normalizeSkinConfig(params));
     expect(js).toContain("--ocs-accent:#123456");

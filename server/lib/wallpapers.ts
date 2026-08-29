@@ -27,7 +27,15 @@ export function pruneVideos(max = MAX_VIDEO_FILES): void {
   }
   if (files.length <= max) return;
   const byAge = files
-    .map((f) => ({ f, m: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .map((f) => {
+      let m = 0;
+      try {
+        m = fs.statSync(path.join(dir, f)).mtimeMs;
+      } catch {
+        /* stat 失败（如并发删除）视为最旧，优先淘汰 */
+      }
+      return { f, m };
+    })
     .sort((a, b) => b.m - a.m);
   for (const { f } of byAge.slice(max)) {
     try {

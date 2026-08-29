@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import fs from "node:fs";
+import fsp from "node:fs/promises";
 import path from "node:path";
 import { extractPalette, buildTuiTheme, type Swatch } from "../lib/palette.js";
 import {
@@ -43,7 +43,8 @@ router.post(
   "/video",
   /* 原始二进制上传：type:()=>true 接管该路由所有 Content-Type（全局 express.json 只解析 json，不冲突） */
   express.raw({ type: () => true, limit: MAX_VIDEO_BYTES }),
-  (req, res) => {
+  /* 异步写盘：最大 100MB，同步 write 会阻塞事件循环 */
+  async (req, res) => {
     try {
       const ext = String(req.query.ext ?? "").toLowerCase();
       if (!VIDEO_EXT.has(ext)) return res.status(400).json({ error: "仅支持 mp4 / webm 视频" });
@@ -53,9 +54,9 @@ router.post(
         return res.status(413).json({ error: "视频超过 100MB 上限" });
       }
       const dir = videosDir();
-      fs.mkdirSync(dir, { recursive: true });
+      await fsp.mkdir(dir, { recursive: true });
       const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      fs.writeFileSync(path.join(dir, `${id}.${ext}`), buf);
+      await fsp.writeFile(path.join(dir, `${id}.${ext}`), buf);
       pruneVideos();
       res.json({ ok: true, id, path: `/api/images/video/${id}.${ext}` });
     } catch (e) {

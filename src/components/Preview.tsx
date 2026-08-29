@@ -1,5 +1,5 @@
 import type { TuiThemeJson } from "../lib/themeModel";
-import { resolveColor } from "../lib/themeModel";
+import { fallbackFor, resolveColor } from "../lib/themeModel";
 
 type Mode = "dark" | "light";
 
@@ -18,11 +18,7 @@ export default function Preview({ theme }: Props) {
 
 function PreviewInner({ theme, mode }: Props & { mode: Mode }) {
   const c = (key: string, kind: "bg" | "fg") =>
-    resolveColor(
-      theme.theme[key]?.[mode],
-      theme.defs,
-      kind === "bg" ? (mode === "dark" ? "#101014" : "#f5f5fa") : mode === "dark" ? "#e6e6ef" : "#1a1b26",
-    );
+    resolveColor(theme.theme[key]?.[mode], theme.defs, fallbackFor(mode, kind));
 
   const bg = c("background", "bg");
   const panel = c("backgroundPanel", "bg");

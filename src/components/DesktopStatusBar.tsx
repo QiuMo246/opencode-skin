@@ -9,7 +9,7 @@ export default function DesktopStatusBar() {
   const refresh = useCallback(async () => {
     try {
       setStatus(await api.cdpStatus());
-      setMsg(null);
+      /* 不清空 msg：run() 的动作提示需要保留给用户阅读，下次操作开始时才会重置 */
     } catch (e) {
       setMsg(e instanceof Error ? e.message : String(e));
     }
@@ -17,6 +17,9 @@ export default function DesktopStatusBar() {
 
   useEffect(() => {
     void refresh();
+    /* 轻量轮询：端口/守护/健康徽章保持新鲜（服务端守护 tick 为 5s） */
+    const timer = setInterval(() => void refresh(), 10_000);
+    return () => clearInterval(timer);
   }, [refresh]);
 
   async function run(fn: () => Promise<string>) {

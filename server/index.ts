@@ -53,9 +53,18 @@ if (fs.existsSync(distDir)) {
 /* 错误处理器必须最后注册，才能兜住静态资源等路径抛出的异常 */
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error("[oc-skin-studio] 未处理异常:", err instanceof Error ? (err.stack ?? err.message) : err);
-  if (!res.headersSent) {
-    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
-  }
+  if (res.headersSent) return;
+  /* body-parser 超限等错误自带 status/statusCode（如 413），按原状态码返回而非一律 500 */
+  const e = err as { status?: unknown; statusCode?: unknown } | null;
+  const raw = typeof e?.status === "number" ? e.status : e?.statusCode;
+  const status = typeof raw === "number" && raw >= 400 && raw < 600 ? raw : 500;
+  const message =
+    status === 413
+      ? "请求体过大（视频上限 100MB、JSON 上限 10MB）"
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  res.status(status).json({ error: message });
 });
 
 app.listen(PORT, HOST, () => {

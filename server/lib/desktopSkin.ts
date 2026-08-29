@@ -279,7 +279,10 @@ const ENGINE_BODY = [
   "try{var p=v.play();if(p&&p.catch)p.catch(function(){});}catch(e){}}",
   "if(typeof document!=='undefined'&&!window.__ocSkinVideoVis__){window.__ocSkinVideoVis__=1;document.addEventListener('visibilitychange',function(){var v=document.getElementById(VID);if(!v)return;try{if(document.hidden){v.pause();}else{var p=v.play();if(p&&p.catch)p.catch(function(){});}}catch(e){}});}",
   "function cleanup(){if(st)st.remove();st=null;var v=document.getElementById(VID);if(v)v.remove();HD.classList.remove('oc-studio-skin');HD.classList.remove('oc-active-home');}",
-  "function apply(c,css){cfg=c;cssText=String(css||'');try{localStorage.setItem(KEY,JSON.stringify({v:1,cfg:c,css:cssText}));}catch(e){}ensure();try{ensureVideo(c);}catch(e){}",
+  /* 持久化时剔除 cfg.imageDataUrl：壁纸 base64 已完整包含在 cssText 的 url() 里，
+   * 引擎运行时也不读该字段（ensureVideo 只用 videoPoster）。不剔除的话 localStorage
+   * （~5MB 配额）里会同时存 cfg + css 1~2 处 url() 共 2~3 份拷贝，大壁纸直接超限。 */
+  "function apply(c,css){cfg=c;cssText=String(css||'');try{var pc={},k;for(k in c)pc[k]=c[k];delete pc.imageDataUrl;localStorage.setItem(KEY,JSON.stringify({v:1,cfg:pc,css:cssText}));}catch(e){}ensure();try{ensureVideo(c);}catch(e){}",
   "if(!mo){mo=new MutationObserver(function(){if(!document.getElementById(ID)||!HD.classList.contains('oc-studio-skin'))ensure();homeCheck();});",
   "mo.observe(HD,{childList:true,attributes:true,attributeFilter:['class']});try{mo.observe(document.getElementById('root')||HD,{childList:true,subtree:true});}catch(e){}}}",
   "function restore(){cfg=null;cssText='';try{localStorage.removeItem(KEY);}catch(e){}cleanup();if(mo){mo.disconnect();mo=null;}delete window.__ocSkinEngine__;return 'ok';}",

@@ -56,9 +56,9 @@ router.post("/skin", (req, res) => {
   }
 });
 
-router.post("/inject", (_req, res) => {
+router.post("/inject", async (_req, res) => {
   try {
-    res.json(runInjector());
+    res.json(await runInjector());
   } catch (e) {
     bad(res, e);
   }
@@ -127,13 +127,17 @@ router.post("/cdp/launch", async (req, res) => {
 
 /** 所有可注入的 page 目标（支持多窗口/多 tab）；单次 /json 请求完成探测。 */
 async function pageWsUrls(port: number): Promise<string[]> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 3000);
   let list: unknown;
   try {
-    const r = await fetch(`http://127.0.0.1:${port}/json`);
+    const r = await fetch(`http://127.0.0.1:${port}/json`, { signal: ctl.signal });
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     list = await r.json();
   } catch {
     throw new Error("调试端口未就绪，请先「启动并连接」");
+  } finally {
+    clearTimeout(timer);
   }
   return (Array.isArray(list) ? list : [])
     .filter(
@@ -144,9 +148,7 @@ async function pageWsUrls(port: number): Promise<string[]> {
 
 type ApplyOutcome = { label: string; error?: string; present?: boolean; health?: SkinHealth };
 
-async function applyToAllPages(js: string, port = CDP_PORT_DEFAULT): Promise<ApplyOutcome[]> {
-  const urls = await pageWsUrls(port);
-  if (urls.length === 0) throw new Error("未发现可注入的页面目标");
+async function applyToAllPages(urls: string[], js: string): Promise<ApplyOutcome[]> {
   const outcomes: ApplyOutcome[] = [];
   for (let i = 0; i < urls.length; i++) {
     const o: ApplyOutcome = { label: urls.length > 1 ? `窗口${i + 1}` : "主窗口" };
@@ -167,7 +169,9 @@ router.post("/cdp/apply", async (req, res) => {
     const cfg = normalizeSkinConfig(req.body as SkinApplyParams);
     const port = Number(req.body?.port) || CDP_PORT_DEFAULT;
     const js = buildSkinEngineJs(cfg);
-    const outcomes = await applyToAllPages(js, port);
+    const urls = await pageWsUrls(port);
+    if (urls.length === 0) throw new Error("未发现可注入的页面目标");
+    const outcomes = await applyToAllPages(urls, js);
     const injected = outcomes.filter((o) => !o.error && o.present).length;
     if (injected === 0) {
       throw new Error(
@@ -182,7 +186,7 @@ router.post("/cdp/apply", async (req, res) => {
     try {
       const winBlur = (cfg as { windowBlurPx?: number }).windowBlurPx ?? 4;
       const mode = windowFxMode(cfg.windowAlpha ?? 1);
-      for (const u of await pageWsUrls(port)) await setBgOverrideOnTarget(u, mode === "transparent");
+      for (const u of urls) await setBgOverrideOnTarget(u, mode === "transparent");
       if (mode === "transparent") {
         const exe = findDesktopExe();
         if (!exe) throw new Error("未找到 OpenCode Desktop 可执行文件");
@@ -202,9 +206,10 @@ router.post("/cdp/apply", async (req, res) => {
         p,
         JSON.stringify({ ...cfg, appliedAt: new Date().toISOString(), healthOk }, null, 2) + "\n",
       );
-      /* 预生成 CSS 缓存：守护轮询时可直接读取，跳过重复的 normalizeSkinConfig + cssRulesFor 计算 */
-      const css = buildSkinEngineJs(normalizeSkinConfig(cfg));
-      writeFileAtomic(lastCssCachePath(), css);
+      /* 预生成 CSS 缓存：守护轮询时可直接读取，跳过重复的 normalizeSkinConfig + cssRulesFor 计算。
+       * 引擎 JS 不是 JSON，走 writeFileAtomic 会被其 JSON 校验拒绝，直接落盘
+       * （目录已由上方 last.json 的原子写创建）。 */
+      fs.writeFileSync(lastCssCachePath(), buildSkinEngineJs(cfg), "utf8");
     } catch {
       /* 记录失败不影响注入 */
     }
@@ -304,7 +309,6 @@ async function reapplyIfMissing(): Promise<string> {
     js = buildSkinEngineJs(normalizeSkinConfig(raw));
   }
   const winAlpha = (raw as { windowAlpha?: number }).windowAlpha ?? 1;
-  const winBlur = (raw as { windowBlurPx?: number }).windowBlurPx ?? 4;
   const fxMode = windowFxMode(winAlpha);
   const needWindowFx = fxMode === "transparent";
   const needBgOverride = needWindowFx;
@@ -363,9 +367,12 @@ function startWatch(port: number): void {
   }
 }
 
-function stopWatch(): void {
+/** 停止守护定时器。persist=false 用于进程退出等场景：只清定时器，不把用户开启的
+ * 守护状态覆写为 disabled，保证下次启动仍能按 flag 文件恢复。 */
+function stopWatch(persist = true): void {
   if (watchState.timer) clearInterval(watchState.timer);
   watchState.timer = null;
+  if (!persist) return;
   try {
     fs.writeFileSync(watchFlagPath(), JSON.stringify({ enabled: false, port: watchState.port }));
   } catch {
@@ -381,7 +388,8 @@ router.post("/cdp/watch", (req, res) => {
   res.json({ ok: true, watchEnabled: !!watchState.timer });
 });
 
-process.on("exit", stopWatch);
+/* 退出时只清定时器；若写入 enabled:false，下次启动的「按 flag 恢复守护」永远失效 */
+process.on("exit", () => stopWatch(false));
 export default router;
 
 /* ---------- 桌面端主题库（精选 + 用户自定义） ---------- */

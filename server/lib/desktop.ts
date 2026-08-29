@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { writeFileAtomic } from "./fsio.js";
 import { decodeDataUrl } from "./dataurl.js";
 import { clamp01 } from "./color.js";
@@ -127,27 +127,49 @@ export function buildSkinPack(params: SkinPackParams): Record<string, unknown> {
   };
 }
 
-/** 调用上游注入管线（injector.mjs / start.ps1）。 */
-export function runInjector(): Record<string, unknown> {
+/** 调用上游注入管线（injector.mjs / start.ps1）。异步执行，不阻塞事件循环。 */
+export async function runInjector(): Promise<Record<string, unknown>> {
   const injector = detectInjector();
   if (!injector.found || !injector.repoPath || !injector.launcher) {
     throw new Error(
       "未找到 opencodedev-skin 注入器，请先克隆仓库到 ~/opencodedev-skin 或设置 OC_SKIN_INJECTOR_DIR",
     );
   }
-  const isPs1 = injector.launcher.endsWith(".ps1");
-  const cmd = isPs1
-    ? ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", injector.launcher]
-    : ["node", injector.launcher];
-  const r = spawnSync(cmd[0], cmd.slice(1), {
-    cwd: injector.repoPath,
-    encoding: "utf8",
-    timeout: 60_000,
-    windowsHide: true,
-  });
-  const tail = ((r.stdout ?? "") + "\n" + (r.stderr ?? "")).trim().split(/\r?\n/).slice(-12).join("\n");
-  if (r.error || (r.status !== null && r.status !== 0)) {
-    throw new Error(`注入器执行失败（exit=${r.status ?? "?"}）：\n${tail}`);
+  const { repoPath, launcher } = injector;
+  const cmd = launcher.endsWith(".ps1")
+    ? ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", launcher]
+    : ["node", launcher];
+  const r = await new Promise<{ stdout: string; stderr: string; code: number | null }>(
+    (resolve, reject) => {
+      const child = spawn(cmd[0], cmd.slice(1), { cwd: repoPath, windowsHide: true });
+      let stdout = "";
+      let stderr = "";
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        child.kill();
+        reject(new Error("注入器执行超时（60s）"));
+      }, 60_000);
+      child.stdout.on("data", (d) => (stdout += String(d)));
+      child.stderr.on("data", (d) => (stderr += String(d)));
+      child.on("error", (e) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      });
+      child.on("close", (code) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        resolve({ stdout, stderr, code });
+      });
+    },
+  );
+  const tail = (r.stdout + "\n" + r.stderr).trim().split(/\r?\n/).slice(-12).join("\n");
+  if (r.code !== 0) {
+    throw new Error(`注入器执行失败（exit=${r.code ?? "?"}）：\n${tail}`);
   }
-  return { ok: true, launcher: injector.launcher, outputTail: tail };
+  return { ok: true, launcher, outputTail: tail };
 }

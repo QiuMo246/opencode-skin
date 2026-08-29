@@ -60,7 +60,7 @@ async function main() {
 
   const chk1 = await evaluateOnTarget(
     ws,
-    "JSON.stringify({style:!!document.getElementById('__oc_studio_style__'),cls:document.documentElement.classList.contains('oc-studio-skin'),ls:!!localStorage.getItem('__oc_skin_cfg_v1'),engine:!!window.__ocSkinEngine__})",
+    "JSON.stringify({style:!!document.getElementById('__oc_studio_style__'),cls:document.documentElement.classList.contains('oc-studio-skin'),ls:!!localStorage.getItem('__oc_skin_cfg_v2'),engine:!!window.__ocSkinEngine__})",
   );
   console.log("state:", chk1);
 
@@ -69,7 +69,7 @@ async function main() {
   const ws2 = await firstPageWs();
   const chk2 = await evaluateOnTarget(
     ws2,
-    "JSON.stringify({style:!!document.getElementById('__oc_studio_style__'),cls:document.documentElement.classList.contains('oc-studio-skin'),ls:(function(){try{return !!localStorage.getItem('__oc_skin_cfg_v1')}catch(e){return 'ERR'}})(),engine:!!window.__ocSkinEngine__,err:window.__ocSkinErr__||null,ready:document.readyState})",
+    "JSON.stringify({style:!!document.getElementById('__oc_studio_style__'),cls:document.documentElement.classList.contains('oc-studio-skin'),ls:(function(){try{return !!localStorage.getItem('__oc_skin_cfg_v2')}catch(e){return 'ERR'}})(),engine:!!window.__ocSkinEngine__,err:window.__ocSkinErr__||null,ready:document.readyState})",
   );
   console.log("after-reload:", chk2);
 
@@ -85,7 +85,7 @@ async function main() {
   await sleep(300);
   const chk4 = await evaluateOnTarget(
     ws2,
-    "JSON.stringify({style:!!document.getElementById('__oc_studio_style__'),cls:document.documentElement.classList.contains('oc-studio-skin'),ls:!!localStorage.getItem('__oc_skin_cfg_v1')})",
+    "JSON.stringify({style:!!document.getElementById('__oc_studio_style__'),cls:document.documentElement.classList.contains('oc-studio-skin'),ls:!!localStorage.getItem('__oc_skin_cfg_v2')})",
   );
   console.log("restore-result:", rs, "after-restore:", chk4);
   await sleep(300);
