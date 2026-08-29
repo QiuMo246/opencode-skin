@@ -1,7 +1,10 @@
 node_modules/
 dist/
 release/
-presets/
+presets/*
+!presets/wallpapers/
+presets/wallpapers/videos/*
+!presets/wallpapers/videos/builtin-*
 .playwright-mcp/
 *.log
 .DS_Store

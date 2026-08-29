@@ -77,7 +77,7 @@ CI（GitHub Actions）在每次 push/PR 时自动跑 lint、tsc、单元测试�
 | 桌面端主题库     | `~/.config/opencode/oc-skin-studio/desktop-themes/`（旧版存于 %TEMP%，首次访问自动迁移） |
 | CDP 皮肤包       | `<注入器仓库>/presets/<id>/`                                                             |
 | 桌面端上次皮肤   | `<项目>/presets/desktop-skins/last.json`                                                 |
-| 内置壁纸库       | `<项目>/presets/wallpapers/`（本地文件，含静态与动态壁纸，不随 git 分发）                |
+| 内置壁纸库       | `<项目>/presets/wallpapers/`（静态与内置动态壁纸随仓库分发；用户上传的视频不入库）       |
 | 官方主题色板缓存 | `%TEMP%/oc-skin-studio/theme-colors/`（7 天 TTL，纯缓存可随时删）                        |
 
 ## 环境变量（测试/自定义用）
