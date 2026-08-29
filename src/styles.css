@@ -973,7 +973,8 @@ label.button-like:hover {
   cursor: pointer;
 }
 
-.wp-item img {
+.wp-item img,
+.wp-item video {
   display: block;
   width: 100%;
   height: 74px;
@@ -1191,29 +1192,125 @@ label.button-like:hover {
   border: 1px solid var(--stroke);
 }
 
-.dt-presets {
+.preset-groups {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.preset-group-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
   margin-bottom: 8px;
+}
+
+.dt-presets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .dt-presets {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .preset-btn {
   display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--stroke);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  text-align: left;
+  transition:
+    border-color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out),
+    transform 0.12s ease,
+    box-shadow 0.18s var(--ease-out);
+}
+
+.preset-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+
+.preset-btn.preset-active {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.18);
+}
+
+.preset-swatch-wrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(10, 13, 20, 0.6);
+}
+
+.preset-swatch {
+  position: absolute;
+  inset: 0;
+  opacity: 0.95;
+}
+
+.preset-glass {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.preset-texts {
+  display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 2px;
-  padding: 9px 15px;
+  min-width: 0;
 }
 
 .preset-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+}
+
+.preset-blur {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 999px;
 }
 
 .preset-desc {
   font-size: 11px;
+  line-height: 1.4;
   color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14ch;
 }
 
 .auto-msg {

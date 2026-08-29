@@ -1,28 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, type Curated, type DesktopTheme, type SkinApplyParams } from "../api";
 import { applyResultMsg, useDesktopSkin } from "../lib/desktopSkin";
+import { mapOfficialColors, respectTransparencyOff } from "../lib/officialMapping";
 import { useOfficialColors } from "../lib/useOfficialColors";
 import DesktopStatusBar from "../components/DesktopStatusBar";
 
-function luma(hex: string): number {
-  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) return 0;
-  const n = parseInt(m[1], 16);
-  return 0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255);
-}
-
-/** 官方主题配色 → 桌面端玻璃参数：主色作强调色，背景亮度推断深浅模式 */
-function mapOfficialColors(colors: string[]): Partial<SkinApplyParams> {
-  const bg = colors[0] ?? "#2e3440";
-  const accent = colors[1] ?? colors[2] ?? colors[0] ?? "#88c0d0";
-  return {
-    appearance: luma(bg) > 140 ? "light" : "dark",
-    accentHex: accent,
-  };
-}
-
 export default function DesktopMarketPage() {
-  const { update, applyNow, syncMsg } = useDesktopSkin();
+  const { params, update, applyNow, syncMsg } = useDesktopSkin();
   const [curated, setCurated] = useState<Curated | null>(null);
   const themeColors = useOfficialColors();
   const [themes, setThemes] = useState<DesktopTheme[]>([]);
@@ -75,7 +59,8 @@ export default function DesktopMarketPage() {
     <div className="page">
       <h2>桌面端 · 主题市场</h2>
       <p className="page-desc">
-        把官方主题配色一键映射为桌面端玻璃皮肤，或从精选主题库直接应用。壁纸保持不变。
+        从官方主题的 5
+        色色板提取背景、主色等属性，自动映射到强调色、深浅模式、窗口透明度与面板/内容着色。壁纸及其画面参数（模糊/焦点/亮度/对比度/饱和度）保持不变，由壁纸工作台负责。
       </p>
       <DesktopStatusBar />
       {msg && <div className={msg.kind === "ok" ? "alert alert-ok" : "alert alert-err"}>{msg.text}</div>}
@@ -83,7 +68,9 @@ export default function DesktopMarketPage() {
 
       <h3 className="dtm-sec-title">官方配色映射</h3>
       <p className="page-desc">
-        取官方主题的主色为强调色，按背景亮度自动选择深浅模式，共 {curated?.official.length ?? "…"} 个主题。
+        从色板的 HSL
+        属性（明度、饱和度、色相）推导玻璃参数：主色作为强调色并直接为面板/内容区着色，着色强度随主题饱和度拉开（0.05–0.65），不同主题的底色色调与玻璃感可感知地不同。窗口透明已关闭（0%）时不会被主题强制开启，仅已开启时按主题重调强度。共{" "}
+        {curated?.official.length ?? "…"} 个主题。
       </p>
       <div className="grid mk-grid">
         {(curated?.official ?? []).map((t) => {
@@ -106,7 +93,12 @@ export default function DesktopMarketPage() {
                 <button
                   disabled={!mapped || busyKey === `official:${t.id}`}
                   onClick={() =>
-                    mapped && void applyTheme(`official:${t.id}`, mapped, `已应用「${t.id}」配色`)
+                    mapped &&
+                    void applyTheme(
+                      `official:${t.id}`,
+                      respectTransparencyOff(mapped, params.windowAlpha),
+                      `已应用「${t.id}」配色`,
+                    )
                   }
                 >
                   {busyKey === `official:${t.id}` ? "应用中…" : "应用此配色"}
@@ -132,7 +124,7 @@ export default function DesktopMarketPage() {
             </div>
             <p className="card-meta">
               {t.desc ||
-                `${t.params.appearance === "light" ? "浅色" : "深色"} · 面板 ${Math.round((t.params.panelAlpha ?? 0.7) * 100)}%`}
+                `${t.params.appearance === "light" ? "浅色" : "深色"} · ${t.params.accentHex ?? "#88c0d0"}`}
             </p>
             <footer>
               <button

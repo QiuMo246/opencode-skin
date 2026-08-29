@@ -1,16 +1,28 @@
-import { Router } from "express";
+import express, { Router } from "express";
+import fs from "node:fs";
 import path from "node:path";
 import { extractPalette, buildTuiTheme, type Swatch } from "../lib/palette.js";
-import { ensureWallpapers, presetsDir } from "../lib/wallpapers.js";
+import {
+  ensureWallpapers,
+  ensureVideoWallpapers,
+  presetsDir,
+  videosDir,
+  VIDEO_NAME_RE,
+  pruneVideos,
+} from "../lib/wallpapers.js";
 
 const router = Router();
 
 /** 客户端压缩到 ≤200px（src/lib/imageClient.ts），上限留出余量即可；过大值会同步阻塞事件循环。 */
 const MAX_PIXELS = 250_000;
 
+/* 动态壁纸视频：100MB 上限，超出在缓冲前拒绝（express.raw 的 413 报错信息对用户不友好） */
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const VIDEO_EXT = new Set(["mp4", "webm"]);
+
 router.get("/builtin", (_req, res) => {
   try {
-    res.json({ wallpapers: ensureWallpapers() });
+    res.json({ wallpapers: ensureWallpapers(), videos: ensureVideoWallpapers() });
   } catch (e) {
     res.status(500).json({ error: `壁纸生成失败: ${e instanceof Error ? e.message : String(e)}` });
   }
@@ -24,6 +36,41 @@ router.get("/file/:id", (req, res) => {
   res.setHeader("Cache-Control", "public, max-age=86400");
   res.sendFile(file, (err) => {
     if (err && !res.headersSent) res.status(404).json({ error: "wallpaper not found" });
+  });
+});
+
+router.post(
+  "/video",
+  /* 原始二进制上传：type:()=>true 接管该路由所有 Content-Type（全局 express.json 只解析 json，不冲突） */
+  express.raw({ type: () => true, limit: MAX_VIDEO_BYTES }),
+  (req, res) => {
+    try {
+      const ext = String(req.query.ext ?? "").toLowerCase();
+      if (!VIDEO_EXT.has(ext)) return res.status(400).json({ error: "仅支持 mp4 / webm 视频" });
+      const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
+      if (buf.length === 0) return res.status(400).json({ error: "视频内容为空" });
+      if (buf.length > MAX_VIDEO_BYTES) {
+        return res.status(413).json({ error: "视频超过 100MB 上限" });
+      }
+      const dir = videosDir();
+      fs.mkdirSync(dir, { recursive: true });
+      const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      fs.writeFileSync(path.join(dir, `${id}.${ext}`), buf);
+      pruneVideos();
+      res.json({ ok: true, id, path: `/api/images/video/${id}.${ext}` });
+    } catch (e) {
+      res.status(500).json({ error: `视频保存失败: ${e instanceof Error ? e.message : String(e)}` });
+    }
+  },
+);
+
+router.get("/video/:name", (req, res) => {
+  const name = String(req.params.name);
+  if (!VIDEO_NAME_RE.test(name)) return res.status(400).json({ error: "invalid name" });
+  /* sendFile 走 send：自动带 Content-Type 与 Range 支持（进度拖动必需） */
+  res.setHeader("Cache-Control", "public, max-age=86400");
+  res.sendFile(path.join(videosDir(), name), (err) => {
+    if (err && !res.headersSent) res.status(404).json({ error: "video not found" });
   });
 });
 

@@ -31,7 +31,7 @@ const GROUPS: Array<{ title: string; items: Array<{ id: Page; label: string; hin
     {
       title: "桌面端皮肤",
       items: [
-        { id: "dt-editor", label: "主题编辑器", hint: "实时同步 · 预设 · 截图预览", icon: SlidersHorizontal },
+        { id: "dt-editor", label: "主题编辑器", hint: "9 参数 · 实时同步 · 主题库", icon: SlidersHorizontal },
         { id: "dt-market", label: "主题市场", hint: "官方配色映射 · 精选主题库", icon: Storefront },
         { id: "dt-wallpaper", label: "壁纸工作台", hint: "上传取色 · 焦点 · 一键应用", icon: Mountains },
       ],

@@ -1,112 +1,60 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { encodePng } from "./png.js";
-import { mulberry32 } from "./prng.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const presetsDir = (): string => path.join(__dirname, "..", "..", "presets", "wallpapers");
 
 export type WallpaperInfo = { id: string; title: string; file: string };
+export type VideoWallpaperInfo = { id: string; title: string; file: string; poster: string };
 
-type Shader = (x: number, y: number, w: number, h: number) => [number, number, number];
+/** 动态壁纸视频的存储目录（presets/ 整体 git-ignore）。 */
+export const videosDir = (): string => path.join(presetsDir(), "videos");
 
-const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
-const mix3 = (
-  a: [number, number, number],
-  b: [number, number, number],
-  t: number,
-): [number, number, number] => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+/** 可服务的视频文件名：<id>.<ext>，ext 仅 mp4/webm（Chromium <video> 可靠播放的两种）；jpg 仅限内置海报。 */
+export const VIDEO_NAME_RE = /^[a-z0-9-]+\.(mp4|webm|jpg)$/;
 
-const add = (
-  base: [number, number, number],
-  c: [number, number, number],
-  k: number,
-): [number, number, number] => [
-  Math.min(255, base[0] + c[0] * k),
-  Math.min(255, base[1] + c[1] * k),
-  Math.min(255, base[2] + c[2] * k),
-];
+/** 最多保留的视频文件数：超出按修改时间淘汰最旧的，防止磁盘被 100MB 级文件悄悄吃满。 */
+export const MAX_VIDEO_FILES = 10;
 
-const SHADERS: Record<string, Shader> = {
-  aurora: (x, y) => {
-    let c = mix3([11, 16, 38], [18, 58, 74], y);
-    const w1 = Math.sin(x * 6.28 + y * 2.4) * 0.5 + 0.5;
-    const w2 = Math.sin(x * 12.56 - y * 4.2 + 1.7) * 0.5 + 0.5;
-    c = add(c, [60, 230, 160], 0.22 * w1 * Math.pow(1 - y, 1.6));
-    c = add(c, [150, 110, 240], 0.18 * w2 * Math.pow(1 - y, 2.2));
-    return c;
-  },
-  sunset: (x, y) => {
-    let c =
-      y < 0.55
-        ? mix3([53, 35, 93], [179, 70, 110], y / 0.55)
-        : mix3([179, 70, 110], [255, 154, 90], (y - 0.55) / 0.45);
-    const d = Math.hypot(x - 0.5, (y - 0.6) * 1.4);
-    c = add(c, [255, 220, 160], Math.max(0, 0.9 - d * 2.4));
-    return c;
-  },
-  ocean: (x, y) => {
-    let c = mix3([4, 18, 31], [10, 77, 104], (x + y) / 2);
-    const ca = Math.sin(x * 22) * Math.sin(y * 14 + x * 6);
-    c = add(c, [90, 200, 220], Math.max(0, ca - 0.55) * 0.5);
-    return c;
-  },
-  forest: (x, y) => {
-    let c = mix3([12, 31, 20], [39, 69, 48], y);
-    const fog = Math.sin(x * 8 + y * 30) * 0.5 + 0.5;
-    c = add(c, [140, 180, 150], fog * fog * 0.12 * y);
-    return c;
-  },
-  neon: (x, y) => {
-    let c: [number, number, number] = [10, 7, 20];
-    const d1 = Math.abs(((x * 0.9 - y + 0.15) % 1) - 0.5);
-    const d2 = Math.abs(((x * 0.7 + y * 0.6 - 0.2) % 1) - 0.5);
-    c = add(c, [230, 40, 160], Math.max(0, 0.5 - d1 * 3));
-    c = add(c, [40, 200, 240], Math.max(0, 0.5 - d2 * 3));
-    return mix3(c, [5, 4, 12], y * 0.35);
-  },
-  lavender: (x, y) => {
-    let c = mix3([142, 197, 252], [224, 195, 252], (x + y) / 2);
-    const d = Math.hypot(x - 0.35, y - 0.4);
-    c = mix3(c, [255, 250, 255], Math.max(0, 0.55 - d) * 0.7);
-    return c;
-  },
-  ember: (x, y, w, h) => {
-    let c = mix3([20, 17, 15], [36, 27, 22], Math.hypot(x - 0.5, y - 0.5));
-    const rnd = mulberry32(77);
-    for (let i = 0; i < 26; i++) {
-      const ex = rnd();
-      const ey = rnd();
-      const r = 0.05 + rnd() * 0.1;
-      const d = Math.hypot(x - ex, (y - ey) * (h / w)) / r;
-      if (d < 1) c = add(c, [255, 120 + rnd() * 80, 40], (1 - d) ** 2 * 0.9);
+export function pruneVideos(max = MAX_VIDEO_FILES): void {
+  const dir = videosDir();
+  let files: string[];
+  try {
+    files = fs.readdirSync(dir).filter((f) => VIDEO_NAME_RE.test(f) && !f.startsWith("builtin-"));
+  } catch {
+    return;
+  }
+  if (files.length <= max) return;
+  const byAge = files
+    .map((f) => ({ f, m: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .sort((a, b) => b.m - a.m);
+  for (const { f } of byAge.slice(max)) {
+    try {
+      fs.rmSync(path.join(dir, f), { force: true });
+    } catch {
+      /* 单个删除失败不影响其余 */
     }
-    return c;
-  },
-  glacier: (x, y) => {
-    let c = mix3([234, 247, 253], [143, 195, 221], y);
-    const s = Math.sin((x * 1.4 + y * 0.6) * 6.28) * 0.5 + 0.5;
-    c = add(c, [255, 255, 255], s * 0.18 * y);
-    return c;
-  },
-};
+  }
+}
 
 const CATALOG: Array<{ id: string; title: string }> = [
-  { id: "aurora", title: "Aurora 极光" },
-  { id: "sunset", title: "Sunset 落日" },
-  { id: "ocean", title: "Ocean 深海" },
-  { id: "forest", title: "Forest 雾林" },
-  { id: "neon", title: "Neon 霓虹" },
-  { id: "lavender", title: "Lavender 薰衣草" },
-  { id: "ember", title: "Ember 余烬" },
-  { id: "glacier", title: "Glacier 冰川" },
+  { id: "rose-lotus", title: "出水芙蓉" },
+  { id: "anime-cold", title: "冷艳少女" },
+  { id: "glance-girl", title: "回眸少女" },
+  { id: "cold-gaze", title: "冷峻眼神" },
+  { id: "gojo", title: "五条悟" },
+  { id: "summer-cartoon", title: "夏日卡通" },
 ];
 
-const W = 800;
-const H = 500;
+/** 内置动态壁纸：1080p30 无音轨压缩版，随 presets 分发；builtin- 前缀文件不参与 pruneVideos 淘汰。 */
+const VIDEO_CATALOG: Array<{ id: string; title: string }> = [
+  { id: "builtin-kuroha-lineart", title: "动漫线稿 · 动态" },
+  { id: "builtin-cold-charm", title: "冷艳少女 · 动态" },
+  { id: "builtin-water-healing", title: "卡通水面 · 动态" },
+];
 
-/** 缺失时程序化生成内置壁纸，返回图库清单。 */
+/** 返回图库清单（仅列出存在的文件）。 */
 export function ensureWallpapers(): WallpaperInfo[] {
   const dir = presetsDir();
   fs.mkdirSync(dir, { recursive: true });
@@ -114,22 +62,23 @@ export function ensureWallpapers(): WallpaperInfo[] {
   for (const item of CATALOG) {
     const file = `${item.id}.png`;
     const full = path.join(dir, file);
-    if (!fs.existsSync(full)) {
-      const rgba = new Uint8Array(W * H * 4);
-      const shader = SHADERS[item.id];
-      for (let py = 0; py < H; py++) {
-        for (let px = 0; px < W; px++) {
-          const c = shader(px / (W - 1), py / (H - 1), W, H);
-          const o = (py * W + px) * 4;
-          rgba[o] = Math.round(c[0]);
-          rgba[o + 1] = Math.round(c[1]);
-          rgba[o + 2] = Math.round(c[2]);
-          rgba[o + 3] = 255;
-        }
-      }
-      fs.writeFileSync(full, encodePng(W, H, rgba));
+    if (fs.existsSync(full)) {
+      out.push({ id: item.id, title: item.title, file });
     }
-    out.push({ id: item.id, title: item.title, file });
+  }
+  return out;
+}
+
+/** 返回内置动态壁纸清单（仅列出存在的视频与海报）。 */
+export function ensureVideoWallpapers(): VideoWallpaperInfo[] {
+  const dir = videosDir();
+  fs.mkdirSync(dir, { recursive: true });
+  const out: VideoWallpaperInfo[] = [];
+  for (const item of VIDEO_CATALOG) {
+    const file = `${item.id}.mp4`;
+    if (fs.existsSync(path.join(dir, file))) {
+      out.push({ id: item.id, title: item.title, file, poster: `/api/images/video/${item.id}-poster.jpg` });
+    }
   }
   return out;
 }

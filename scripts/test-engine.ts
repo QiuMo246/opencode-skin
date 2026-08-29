@@ -50,9 +50,7 @@ async function main() {
   const cfg = normalizeSkinConfig({
     appearance: "dark",
     accentHex: "#e879f9",
-    panelAlpha: 0.55,
-    blurPx: 22,
-    titlebarAlpha: 0.45,
+    windowBlurPx: 22,
     imgBrightness: 110,
     imageDataUrl:
       "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",

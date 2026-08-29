@@ -1,6 +1,7 @@
 export type ThemeInfo = { name: string; size: number; mtime: number };
 export type Swatch = { hex: string; share: number; h: number; s: number; l: number };
 export type WallpaperInfo = { id: string; title: string };
+export type VideoWallpaperInfo = { id: string; title: string; file: string; poster: string };
 export type WtProfile = { id: string; name: string };
 export type WtDetect = {
   found: boolean;
@@ -44,15 +45,14 @@ export type SkinLastApplied = {
   light?: boolean;
   accentHex?: string;
   imageDataUrl?: string;
-  panelAlpha?: number;
-  blurPx?: number;
-  titlebarAlpha?: number;
   focusX?: number;
   focusY?: number;
   imgBrightness?: number;
   imgContrast?: number;
   imgSaturate?: number;
   imgOpacity?: number;
+  windowAlpha?: number;
+  windowBlurPx?: number;
   appliedAt?: string;
   healthOk?: boolean;
 };
@@ -83,17 +83,20 @@ export type CdpStatus = {
 };
 export type SkinApplyParams = {
   imageDataUrl?: string;
+  videoUrl?: string;
+  videoPoster?: string;
   accentHex?: string;
   appearance?: "dark" | "light";
-  panelAlpha?: number;
-  blurPx?: number;
-  titlebarAlpha?: number;
   focusX?: number;
   focusY?: number;
   imgBrightness?: number;
   imgContrast?: number;
   imgSaturate?: number;
   imgOpacity?: number;
+  windowAlpha?: number;
+  windowBlurPx?: number;
+  panelTint?: number;
+  contentTint?: number;
 };
 
 export type CdpApplyResult = {
@@ -101,6 +104,7 @@ export type CdpApplyResult = {
   injected: number;
   total: number;
   healthOk?: boolean;
+  windowFx?: string;
   badHealth?: Array<{ label: string; bg?: string; sel?: string }>;
   errors?: Array<{ label: string; error: string }>;
 };
@@ -119,7 +123,8 @@ async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const details = (data as { details?: unknown }).details;
     const detail = Array.isArray(details) ? ` (${details.map(String).join("; ")})` : "";
-    throw new Error(`${(data as { error?: string }).error ?? res.statusText}${detail}`);
+    const msg = (data as { error?: string }).error ?? res.statusText;
+    throw new Error(`[${res.status}] ${msg}${detail}`);
   }
   return data as T;
 }
@@ -161,7 +166,8 @@ export const api = {
         reader.readAsDataURL(file);
       },
     ),
-  builtinWallpapers: () => fetch("/api/images/builtin").then(handle<{ wallpapers: WallpaperInfo[] }>),
+  builtinWallpapers: () =>
+    fetch("/api/images/builtin").then(handle<{ wallpapers: WallpaperInfo[]; videos: VideoWallpaperInfo[] }>),
   paletteFromPixels: (width: number, height: number, pixels: string, k = 6) =>
     fetch("/api/images/palette", {
       method: "POST",
@@ -247,6 +253,20 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...params, port }),
     }).then(handle<CdpApplyResult>),
+  /** 动态壁纸：原始二进制上传视频，返回可注入的服务路径（需拼 origin 成绝对地址） */
+  uploadVideo: async (file: File) => {
+    const lower = file.name.toLowerCase();
+    const ext = lower.endsWith(".webm") || file.type === "video/webm" ? "webm" : "mp4";
+    if (!lower.endsWith(".mp4") && !lower.endsWith(".webm") && !file.type.startsWith("video/")) {
+      throw new Error("仅支持 mp4 / webm 视频文件");
+    }
+    const r = await fetch(`/api/images/video?ext=${ext}`, {
+      method: "POST",
+      headers: { "Content-Type": `video/${ext}` },
+      body: file,
+    });
+    return handle<{ ok: boolean; id: string; path: string }>(r);
+  },
   cdpRestore: (port?: number) =>
     fetch("/api/desktop/cdp/restore", {
       method: "POST",

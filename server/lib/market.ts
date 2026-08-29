@@ -6,6 +6,29 @@ import { themesDir, ensureDirs } from "./paths.js";
 import { writeFileAtomic } from "./fsio.js";
 import { validateTuiTheme } from "./schema.js";
 
+/* ---- 简易 HTTP 内存缓存（避免重复请求 GitHub API） ---- */
+type CacheEntry = { value: unknown; expiresAt: number };
+const httpCache = new Map<string, CacheEntry>();
+const HTTP_CACHE_MAX = 128;
+
+function httpCacheGet<T>(url: string): T | undefined {
+  const e = httpCache.get(url);
+  if (!e) return undefined;
+  if (Date.now() > e.expiresAt) {
+    httpCache.delete(url);
+    return undefined;
+  }
+  return e.value as T;
+}
+
+function httpCacheSet(url: string, value: unknown, ttlMs: number): void {
+  if (httpCache.size >= HTTP_CACHE_MAX) {
+    const oldest = httpCache.keys().next().value;
+    if (oldest !== undefined) httpCache.delete(oldest);
+  }
+  httpCache.set(url, { value, expiresAt: Date.now() + ttlMs });
+}
+
 export const OFFICIAL = {
   owner: "anomalyco",
   repo: "opencode",
@@ -52,11 +75,15 @@ const FALLBACK_THEMES = [
 ];
 
 export async function ghJson<T>(url: string): Promise<T> {
+  const cached = httpCacheGet<T>(url);
+  if (cached !== undefined) return cached;
   const res = await fetchWithRetry(url, {
     "User-Agent": UA,
     Accept: "application/vnd.github+json",
   });
-  return (await res.json()) as T;
+  const data = (await res.json()) as T;
+  httpCacheSet(url, data, 5 * 60_000);
+  return data;
 }
 
 async function fetchWithRetry(url: string, headers: Record<string, string>, tries = 3): Promise<Response> {
@@ -86,8 +113,12 @@ async function fetchWithRetry(url: string, headers: Record<string, string>, trie
 }
 
 async function ghText(url: string): Promise<string> {
+  const cached = httpCacheGet<string>(url);
+  if (cached !== undefined) return cached;
   const res = await fetchWithRetry(url, { "User-Agent": UA });
-  return await res.text();
+  const text = await res.text();
+  httpCacheSet(url, text, 30 * 60_000);
+  return text;
 }
 
 export const sha256 = (s: string): string => crypto.createHash("sha256").update(s).digest("hex");
@@ -576,7 +607,7 @@ async function remoteSha(car: Sidecar): Promise<string | null> {
       const raw = await ghText(
         `https://raw.githubusercontent.com/${s.owner}/${s.repo}/${encodeURIComponent(s.ref)}/${s.path}`,
       );
-      return sha256(JSON.stringify(JSON.parse(raw), null, 2) + "\n");
+      return sha256(JSON.stringify(parseThemeCandidate(raw, s.path), null, 2) + "\n");
     }
   } catch {
     return null;

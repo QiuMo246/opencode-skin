@@ -19,10 +19,16 @@ function exeCandidates(): string[] {
   const la = process.env.LOCALAPPDATA ?? path.join(os.homedir(), "AppData", "Local");
   const out: string[] = [];
   if (process.env.OC_SKIN_DESKTOP_EXE) out.push(process.env.OC_SKIN_DESKTOP_EXE);
+  // 显式兜底：本机常见安装位置（@opencode-aidesktop 为当前官方分发目录）
+  const explicit = [
+    path.join(la, "Programs", "@opencode-aidesktop", "OpenCode.exe"),
+    path.join(la, "Programs", "OpenCode", "OpenCode.exe"),
+  ];
+  for (const p of explicit) if (!out.includes(p)) out.push(p);
   const programs = path.join(la, "Programs");
   try {
     for (const d of fs.readdirSync(programs)) {
-      if (!/open\s?code/i.test(d)) continue;
+      if (!/opencode/i.test(d)) continue;
       const dir = path.join(programs, d);
       let files: fs.Dirent[] = [];
       try {
@@ -32,14 +38,49 @@ function exeCandidates(): string[] {
       }
       for (const f of files) {
         if (f.isFile() && /\.exe$/i.test(f.name) && !/^unins/i.test(f.name)) {
-          out.push(path.join(dir, f.name));
+          const full = path.join(dir, f.name);
+          if (!out.includes(full)) out.push(full);
         }
       }
     }
   } catch {
     /* Programs 目录不存在 */
   }
+  // 兼容通过 Program Files 安装的场景
+  for (const envKey of ["PROGRAMFILES", "PROGRAMFILES(X86)", "ProgramW6432"]) {
+    const pf = process.env[envKey];
+    if (!pf) continue;
+    try {
+      for (const d of fs.readdirSync(pf)) {
+        if (!/opencode/i.test(d)) continue;
+        const cand = path.join(pf, d, "OpenCode.exe");
+        if (!out.includes(cand)) out.push(cand);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
   return out;
+}
+
+function countForExe(exePath: string): number {
+  const name = path.basename(exePath);
+  try {
+    const out = spawnSync("tasklist", ["/FI", `IMAGENAME eq ${name}`, "/FO", "CSV", "/NH"], {
+      encoding: "utf8",
+      windowsHide: true,
+    });
+    const pat = new RegExp(`^"${name.replace(/[.\\]/g, "\\$&")}"`, "m");
+    return (out.stdout ?? "").split(/\r?\n/).filter((l) => pat.test(l)).length;
+  } catch {
+    return 0;
+  }
+}
+
+export function countDesktopProcesses(): number {
+  const exe = findDesktopExe();
+  if (!exe) return 0;
+  return countForExe(exe);
 }
 
 /** 结果短缓存：watchdog 每 5s 轮询时避免反复扫描 %LOCALAPPDATA%\Programs。 */
@@ -101,22 +142,46 @@ export async function collectStatus(port: number): Promise<DesktopStatus> {
 
 export async function launchDesktop(port: number): Promise<{ launched: boolean; exePath: string }> {
   const exePath = findDesktopExe();
-  if (!exePath) throw new Error("未找到 OpenCode Desktop 可执行文件（可用 OC_SKIN_DESKTOP_EXE 指定）");
+  if (!exePath)
+    throw new Error("未找到 OpenCode Desktop 可执行文件（可用 OC_SKIN_DESKTOP_EXE 指定为完整路径）");
   if (await isPortUp(port)) return { launched: false, exePath };
-  // 经由 cmd start 启动，脱离本服务进程树：重启/关闭 Studio 不会连带关闭 OpenCode
-  const launcher = spawn("cmd.exe", ["/c", "start", "", exePath, `--remote-debugging-port=${port}`], {
-    detached: true,
-    stdio: "ignore",
-    windowsHide: true,
-  });
-  launcher.unref();
+  // 单实例锁快速失败：Chromium/Electron 仅首个实例接受 --remote-debugging-port，
+  // 若已有无调试端口的实例在运行，新的 start 只会聚焦旧窗口，端口永远不会上线。
+  // 此时等待 15s 无意义，直接提示用户走“退出重启”路径。
+  if (countForExe(exePath) > 0) {
+    throw new Error(
+      "检测到已有 OpenCode 实例在运行（未带调试端口）。请点“退出重启”一键重起，或手动完全退出所有 OpenCode 窗口（含托盘）后重试「启动并连接」",
+    );
+  }
+  // 直接 detached 启动（比 cmd start 语义更清晰，且路径含空格/@ 时无需额外引号转义）
+  // 仍保留 cmd start 作为 ENOENT 时的回退
+  let spawned = false;
+  try {
+    const child = spawn(exePath, [`--remote-debugging-port=${port}`], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    child.unref();
+    spawned = true;
+  } catch {
+    /* 回退到 cmd start */
+  }
+  if (!spawned) {
+    const launcher = spawn("cmd.exe", ["/c", "start", "", exePath, `--remote-debugging-port=${port}`], {
+      detached: true,
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    launcher.unref();
+  }
   const deadline = Date.now() + 15000;
   while (Date.now() < deadline) {
     if (await isPortUp(port)) return { launched: true, exePath };
     await new Promise((r) => setTimeout(r, 500));
   }
   throw new Error(
-    "已尝试启动 Desktop 但调试端口未就绪；若已有实例在运行，请先完全退出所有 OpenCode 窗口再试",
+    "已尝试启动 Desktop 但调试端口未就绪（15s 超时）；若已有实例在运行，请点“退出重启”或先完全退出所有 OpenCode 窗口再试",
   );
 }
 
@@ -124,18 +189,7 @@ export async function closeDesktopInstances(gracefulMs = 2500): Promise<{ closed
   const exe = findDesktopExe();
   if (!exe) return { closed: 0, forced: 0 };
   const name = path.basename(exe);
-  const countProcs = (): number => {
-    try {
-      const out = spawnSync("tasklist", ["/FI", `IMAGENAME eq ${name}`, "/FO", "CSV", "/NH"], {
-        encoding: "utf8",
-        windowsHide: true,
-      });
-      const pat = new RegExp(`^"${name.replace(/[.\\]/g, "\\$&")}"`, "m");
-      return (out.stdout ?? "").split(/\r?\n/).filter((l) => pat.test(l)).length;
-    } catch {
-      return 0;
-    }
-  };
+  const countProcs = () => countForExe(exe);
   const before = countProcs();
   if (before === 0) return { closed: 0, forced: 0 };
   spawn("taskkill", ["/IM", name], { stdio: "ignore", windowsHide: true });
@@ -187,6 +241,8 @@ async function withCdp<T>(
       } catch {
         /* already closed */
       }
+      for (const p of pending.values()) p.reject(new Error("CDP 连接已关闭"));
+      pending.clear();
       fn2();
     };
     const timer = setTimeout(() => finish(() => reject(new Error("CDP 调用超时"))), timeoutMs);
@@ -315,4 +371,15 @@ export async function evaluateOnTarget(
     timeoutMs,
     async (send) => (await send("Runtime.evaluate", { expression, returnByValue: true }))?.result?.value,
   );
+}
+
+/** 渲染器底色覆盖：透明后窗口合成层才能透出桌面壁纸（需配合 Win32 accent 透明）。 */
+export async function setBgOverrideOnTarget(wsUrl: string, transparent: boolean): Promise<void> {
+  await withCdp(wsUrl, 10000, async (send) => {
+    await send(
+      "Emulation.setDefaultBackgroundColorOverride",
+      transparent ? { color: { r: 0, g: 0, b: 0, a: 0 } } : {},
+    );
+    return undefined;
+  });
 }

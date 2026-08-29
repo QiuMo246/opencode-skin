@@ -7,16 +7,19 @@ import { detectInjector, buildSkinPack, runInjector } from "../lib/desktop.js";
 import {
   CDP_PORT_DEFAULT,
   collectStatus,
+  findDesktopExe,
   launchDesktop,
   isPortUp,
   closeDesktopInstances,
   applySkinOnTarget,
   restoreOnTarget,
   evaluateOnTarget,
+  setBgOverrideOnTarget,
   captureScreenshotOnTarget,
   skinHealthCheckOnTarget,
   type SkinHealth,
 } from "../lib/cdp.js";
+import { setWindowTransparency, windowFxMode } from "../lib/windowFx.js";
 import { buildSkinEngineJs, normalizeSkinConfig, type SkinApplyParams } from "../lib/desktopSkin.js";
 import { writeFileAtomic } from "../lib/fsio.js";
 import { opencodeConfigDir } from "../lib/paths.js";
@@ -63,9 +66,16 @@ router.post("/inject", (_req, res) => {
 
 /* ---------- 内置 CDP 注入（M6） ---------- */
 
+function lastConfigDir(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "presets", "desktop-skins");
+}
+
 function lastConfigPath(): string {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-  return path.join(root, "presets", "desktop-skins", "last.json");
+  return path.join(lastConfigDir(), "last.json");
+}
+
+function lastCssCachePath(): string {
+  return path.join(lastConfigDir(), "last.css");
 }
 
 router.get("/cdp/status", async (req, res) => {
@@ -94,8 +104,20 @@ router.post("/cdp/launch", async (req, res) => {
   try {
     const port = Number(req.body?.port) || CDP_PORT_DEFAULT;
     if (!(await isPortUp(port))) {
-      if (req.body?.force) await closeDesktopInstances();
-      await launchDesktop(port);
+      const wantForce = !!req.body?.force;
+      if (wantForce) await closeDesktopInstances();
+      try {
+        await launchDesktop(port);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        // 面向大众的一键可用：普通“启动并连接”若因单实例锁快败，自动走“退出重启”路径
+        if (!wantForce && msg.includes("已有")) {
+          await closeDesktopInstances();
+          await launchDesktop(port);
+        } else {
+          throw e;
+        }
+      }
     }
     res.json({ ok: true, ...(await collectStatus(port)) });
   } catch (e) {
@@ -154,13 +176,35 @@ router.post("/cdp/apply", async (req, res) => {
     }
     const badHealth = outcomes.filter((o) => o.health && o.health.ok === false && !o.health.unknown);
     const healthOk = badHealth.length === 0;
+    /* 窗口特效：透明>0 一律真实透出桌面（系统毛玻璃对 Electron 窗口不可用，见 windowFx.ts 头注），
+     * 模糊由页面内面板/壁纸垫底层承接 */
+    let windowFx = "";
+    try {
+      const winBlur = (cfg as { windowBlurPx?: number }).windowBlurPx ?? 4;
+      const mode = windowFxMode(cfg.windowAlpha ?? 1);
+      for (const u of await pageWsUrls(port)) await setBgOverrideOnTarget(u, mode === "transparent");
+      if (mode === "transparent") {
+        const exe = findDesktopExe();
+        if (!exe) throw new Error("未找到 OpenCode Desktop 可执行文件");
+        const r = await setWindowTransparency(exe, cfg.windowAlpha ?? 1);
+        windowFx = `窗口透明已应用（${r.windows} 个窗口）${winBlur > 0 ? ` · 面板磨砂 ${winBlur}px` : ""}`;
+      } else {
+        const exe = findDesktopExe();
+        if (exe) await setWindowTransparency(exe, 1).catch(() => undefined);
+        windowFx = "窗口透明已关闭";
+      }
+    } catch (e) {
+      windowFx = `窗口透明失败：${e instanceof Error ? e.message : e}`;
+    }
     try {
       const p = lastConfigPath();
-      fs.mkdirSync(path.dirname(p), { recursive: true });
-      fs.writeFileSync(
+      writeFileAtomic(
         p,
-        JSON.stringify({ ...cfg, appliedAt: new Date().toISOString(), healthOk }, null, 2),
+        JSON.stringify({ ...cfg, appliedAt: new Date().toISOString(), healthOk }, null, 2) + "\n",
       );
+      /* 预生成 CSS 缓存：守护轮询时可直接读取，跳过重复的 normalizeSkinConfig + cssRulesFor 计算 */
+      const css = buildSkinEngineJs(normalizeSkinConfig(cfg));
+      writeFileAtomic(lastCssCachePath(), css);
     } catch {
       /* 记录失败不影响注入 */
     }
@@ -169,6 +213,7 @@ router.post("/cdp/apply", async (req, res) => {
       injected,
       total: outcomes.length,
       healthOk,
+      windowFx,
       badHealth: badHealth.map((o) => ({ label: o.label, bg: o.health?.bg, sel: o.health?.sel })),
       errors: outcomes.filter((o) => o.error).map((o) => ({ label: o.label, error: o.error })),
     });
@@ -197,13 +242,17 @@ router.post("/cdp/restore", async (req, res) => {
     const results: unknown[] = [];
     for (const u of urls) {
       try {
+        await setBgOverrideOnTarget(u, false).catch(() => undefined);
         results.push(await restoreOnTarget(u));
       } catch {
         /* 单个目标失败不影响其余窗口 */
       }
     }
+    const exe = findDesktopExe();
+    if (exe) await setWindowTransparency(exe, 1).catch(() => undefined);
     try {
       fs.rmSync(lastConfigPath(), { force: true });
+      fs.rmSync(lastCssCachePath(), { force: true });
     } catch {
       /* 忽略 */
     }
@@ -247,7 +296,18 @@ async function reapplyIfMissing(): Promise<string> {
   }
   if (!raw) return "no-config";
   if (urls.length === 0) return "no-targets";
-  const js = buildSkinEngineJs(normalizeSkinConfig(raw));
+  /* 优先读取预生成的 CSS 缓存，避免每 5 秒重复 normalizeSkinConfig + cssRulesFor */
+  let js: string;
+  try {
+    js = fs.readFileSync(lastCssCachePath(), "utf8");
+  } catch {
+    js = buildSkinEngineJs(normalizeSkinConfig(raw));
+  }
+  const winAlpha = (raw as { windowAlpha?: number }).windowAlpha ?? 1;
+  const winBlur = (raw as { windowBlurPx?: number }).windowBlurPx ?? 4;
+  const fxMode = windowFxMode(winAlpha);
+  const needWindowFx = fxMode === "transparent";
+  const needBgOverride = needWindowFx;
   let present = 0;
   let reapplied = 0;
   for (const u of urls) {
@@ -257,9 +317,26 @@ async function reapplyIfMissing(): Promise<string> {
         continue;
       }
       await applySkinOnTarget(u, js);
+      /* 重载后渲染器底色覆盖会失效，随守护一起恢复 */
+      if (needBgOverride) await setBgOverrideOnTarget(u, true);
       reapplied++;
     } catch {
       /* 单个目标失败不影响其余窗口 */
+    }
+  }
+  // 窗口透明需随守护一起恢复：即使样式节点仍在（localStorage 自举），窗口句柄重建后 layered 会丢失
+  if (needWindowFx && (reapplied > 0 || watchState.lastTickResult !== "present")) {
+    try {
+      const exe = findDesktopExe();
+      if (exe) {
+        await setWindowTransparency(exe, winAlpha);
+        // 已重建的窗口也需补一次渲染器透明（present 的窗口之前跳过了上面的 setBgOverride）
+        if (present > 0 && reapplied === 0) {
+          for (const u of urls) await setBgOverrideOnTarget(u, true).catch(() => undefined);
+        }
+      }
+    } catch {
+      /* 窗口透明失败不影响注入守护 */
     }
   }
   return reapplied > 0 ? `reapplied:${reapplied}` : present > 0 ? "present" : "no-targets";
@@ -303,6 +380,8 @@ router.post("/cdp/watch", (req, res) => {
   else stopWatch();
   res.json({ ok: true, watchEnabled: !!watchState.timer });
 });
+
+process.on("exit", stopWatch);
 export default router;
 
 /* ---------- 桌面端主题库（精选 + 用户自定义） ---------- */
@@ -345,138 +424,114 @@ function migrateLegacyThemes(): void {
 
 const BUILTIN_DESKTOP_THEMES: Array<Omit<DesktopThemeFile, "createdAt">> = [
   {
-    id: "cream-glass",
-    name: "奶油玻璃",
-    desc: "浅色 · 柔和磨砂",
+    id: "frost-plume",
+    name: "霜羽",
+    desc: "浅色 · 雾绒白",
     builtin: true,
     params: {
       appearance: "light",
-      accentHex: "#d8a7b1",
-      panelAlpha: 0.5,
-      blurPx: 24,
-      titlebarAlpha: 0.4,
-      imgBrightness: 105,
-      imgContrast: 100,
-      imgSaturate: 105,
-      imgOpacity: 1,
-    },
-  },
-  {
-    id: "midnight-frost",
-    name: "暗夜磨砂",
-    desc: "深色 · 冷色玻璃",
-    builtin: true,
-    params: {
-      appearance: "dark",
-      accentHex: "#88c0d0",
-      panelAlpha: 0.62,
-      blurPx: 22,
-      titlebarAlpha: 0.55,
-      imgBrightness: 85,
-      imgContrast: 105,
-      imgSaturate: 100,
-      imgOpacity: 1,
-    },
-  },
-  {
-    id: "minimal-clear",
-    name: "极简透明",
-    desc: "浅色 · 高透低模糊",
-    builtin: true,
-    params: {
-      appearance: "light",
-      accentHex: "#a3be8c",
-      panelAlpha: 0.32,
-      blurPx: 12,
-      titlebarAlpha: 0.25,
-      imgBrightness: 112,
+      accentHex: "#8ea9c7",
+      imgBrightness: 106,
       imgContrast: 98,
-      imgSaturate: 95,
+      imgSaturate: 94,
       imgOpacity: 1,
     },
   },
   {
-    id: "sunset-rose",
-    name: "落日玫瑰",
-    desc: "深色 · 玫瑰暖调",
+    id: "ink-tide",
+    name: "夜汐",
+    desc: "深色 · 午夜蓝",
     builtin: true,
     params: {
       appearance: "dark",
-      accentHex: "#fb7185",
-      panelAlpha: 0.6,
-      blurPx: 20,
-      titlebarAlpha: 0.5,
-      imgBrightness: 80,
-      imgContrast: 108,
-      imgSaturate: 110,
-      imgOpacity: 1,
-    },
-  },
-  {
-    id: "aurora-teal",
-    name: "极光青夜",
-    desc: "深色 · 峡湾青",
-    builtin: true,
-    params: {
-      appearance: "dark",
-      accentHex: "#8fbcbb",
-      panelAlpha: 0.58,
-      blurPx: 18,
-      titlebarAlpha: 0.48,
+      accentHex: "#7fb0b3",
       imgBrightness: 82,
       imgContrast: 104,
-      imgSaturate: 102,
+      imgSaturate: 98,
       imgOpacity: 1,
     },
   },
   {
-    id: "cedar-mist",
-    name: "雪松晨雾",
-    desc: "浅色 · 雾紫拿铁",
+    id: "rice-paper",
+    name: "素笺",
+    desc: "浅色 · 米纸米灰",
     builtin: true,
     params: {
       appearance: "light",
-      accentHex: "#b48ead",
-      panelAlpha: 0.45,
-      blurPx: 22,
-      titlebarAlpha: 0.35,
+      accentHex: "#c1a48a",
       imgBrightness: 108,
-      imgContrast: 100,
-      imgSaturate: 102,
+      imgContrast: 96,
+      imgSaturate: 90,
       imgOpacity: 1,
     },
   },
   {
-    id: "obsidian-crimson",
-    name: "曜石深红",
-    desc: "深色 · 低亮高对比",
+    id: "ember-rock",
+    name: "烬岩",
+    desc: "深色 · 窑火陶橙",
     builtin: true,
     params: {
       appearance: "dark",
-      accentHex: "#bf616a",
-      panelAlpha: 0.7,
-      blurPx: 26,
-      titlebarAlpha: 0.6,
-      imgBrightness: 70,
-      imgContrast: 112,
+      accentHex: "#c98a6f",
+      imgBrightness: 78,
+      imgContrast: 107,
+      imgSaturate: 104,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "moss-court",
+    name: "苔庭",
+    desc: "浅色 · 苔绿晨雾",
+    builtin: true,
+    params: {
+      appearance: "light",
+      accentHex: "#8da89b",
+      imgBrightness: 104,
+      imgContrast: 99,
       imgSaturate: 96,
       imgOpacity: 1,
     },
   },
   {
-    id: "moonlight-whisper",
-    name: "月白低语",
-    desc: "浅色 · 极光蓝白",
+    id: "abyss-blue",
+    name: "渊蓝",
+    desc: "深色 · 深海钢蓝",
+    builtin: true,
+    params: {
+      appearance: "dark",
+      accentHex: "#7ea6d1",
+      imgBrightness: 80,
+      imgContrast: 106,
+      imgSaturate: 98,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "obsidian-ink",
+    name: "曜夜",
+    desc: "深色 · 曜石墨",
+    builtin: true,
+    params: {
+      appearance: "dark",
+      accentHex: "#b07a77",
+      imgBrightness: 74,
+      imgContrast: 110,
+      imgSaturate: 94,
+      imgOpacity: 1,
+    },
+  },
+  {
+    id: "moon-veil",
+    name: "月绡",
+    desc: "浅色 · 月白绡纱",
     builtin: true,
     params: {
       appearance: "light",
-      accentHex: "#5e81ac",
-      panelAlpha: 0.55,
-      blurPx: 30,
-      titlebarAlpha: 0.42,
-      imgBrightness: 118,
+      accentHex: "#a7bcd6",
+      imgBrightness: 110,
       imgContrast: 96,
-      imgSaturate: 92,
+      imgSaturate: 88,
       imgOpacity: 1,
     },
   },
@@ -485,6 +540,21 @@ const BUILTIN_DESKTOP_THEMES: Array<Omit<DesktopThemeFile, "createdAt">> = [
 function ensureBuiltinDesktopThemes(): void {
   const dir = desktopThemesDir();
   fs.mkdirSync(dir, { recursive: true });
+  const keep = new Set(BUILTIN_DESKTOP_THEMES.map((t) => `${t.id}.json`));
+  // 清理已下架的旧内置（丑版）——仅删 builtin=true 的遗留文件，不动用户自定义
+  try {
+    for (const f of fs.readdirSync(dir)) {
+      if (!f.endsWith(".json") || keep.has(f)) continue;
+      try {
+        const doc = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as DesktopThemeFile;
+        if (doc.builtin) fs.rmSync(path.join(dir, f), { force: true });
+      } catch {
+        /* 忽略损坏文件，交由外层跳过 */
+      }
+    }
+  } catch {
+    /* 目录首次创建时无文件 */
+  }
   for (const t of BUILTIN_DESKTOP_THEMES) {
     const p = path.join(dir, `${t.id}.json`);
     if (fs.existsSync(p)) continue;
@@ -509,9 +579,12 @@ router.get("/themes", (_req, res) => {
         /* 跳过损坏文件 */
       }
     }
-    list.sort((a, b) =>
-      a.builtin === b.builtin ? (b.createdAt ?? "").localeCompare(a.createdAt ?? "") : a.builtin ? -1 : 1,
-    );
+    const order = new Map(BUILTIN_DESKTOP_THEMES.map((t, i) => [t.id, i]));
+    list.sort((a, b) => {
+      if (a.builtin !== b.builtin) return a.builtin ? -1 : 1;
+      if (a.builtin && b.builtin) return (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999);
+      return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+    });
     res.json({ themes: list });
   } catch (e) {
     bad(res, e);

@@ -65,9 +65,7 @@ export function parseJsonc(text: string): unknown {
     } else noComments.push(ch);
   }
   let body = noComments.join("");
-  for (let pass = 0; pass < 3; pass++) {
-    body = body.replace(/,(\s*[}\]])/g, "$1");
-  }
+  body = body.replace(/,(\s*[}\]])/g, "$1");
   try {
     return JSON.parse(body);
   } catch {

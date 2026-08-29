@@ -40,6 +40,16 @@ export default function DesktopStatusBar() {
             <span className={`pill ${status.portUp ? "pill-ok" : "pill-warn"}`}>
               {status.portUp ? `调试端口已就绪 :${status.cdpPort}` : "调试端口未连接"}
             </span>
+            {!status.exeFound && (
+              <span className="pill pill-warn" title="可在 .env 或系统环境变量设 OC_SKIN_DESKTOP_EXE 为完整 exe 路径">
+                未找到 OpenCode.exe
+              </span>
+            )}
+            {status.exeFound && !status.portUp && (
+              <span className="pill-dim" title={status.exePath ?? ""}>
+                已检测到 {status.exePath?.split("\\").pop()} · 需以调试端口重起
+              </span>
+            )}
             {status.pages.length > 0 && <span className="pill-dim">页面目标 ×{status.pages.length}</span>}
             <span className={`pill ${status.watchEnabled ? "pill-ok" : "pill-warn"}`}>
               {status.watchEnabled ? "自动注入守护中" : "守护未开启"}
@@ -66,10 +76,14 @@ export default function DesktopStatusBar() {
         <button
           className="btn"
           disabled={busy}
+          title="一键可用：若已有实例在运行会自动重启并带上调试端口"
           onClick={() =>
             run(async () => {
               const s = await api.cdpLaunch();
-              return s.launched ? "Desktop 已带调试端口启动" : "调试端口已可用（复用运行中的实例）";
+              // 后端已改为自动兜底：普通启动若遇单实例锁会自动 close+ relaunch
+              if (s.launched) return "Desktop 已带调试端口启动";
+              if (s.portUp) return "调试端口已可用（复用运行中的实例）";
+              return "已连接";
             })
           }
         >

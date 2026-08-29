@@ -3,8 +3,10 @@ export type HSL = { h: number; s: number; l: number };
 
 export const clamp01 = (v: number): number => Math.min(1, Math.max(0, v));
 
-/** 已告警过的非法输入（上限 100 条，避免无限增长）。 */
+/** 已告警过的非法输入（周期性重置，避免永久静默）。 */
 const warnedInvalidHex = new Set<string>();
+let warnCount = 0;
+const WARN_RESET_INTERVAL = 500;
 
 export function hexToRgb(hex: string): RGB {
   let h = hex.trim().replace(/^#/, "");
@@ -14,9 +16,16 @@ export function hexToRgb(hex: string): RGB {
       .map((c) => c + c)
       .join("");
   if (h.length !== 6 || /[^0-9a-fA-F]/.test(h)) {
-    if (warnedInvalidHex.size < 100 && !warnedInvalidHex.has(hex)) {
+    if (warnedInvalidHex.size >= WARN_RESET_INTERVAL) {
+      warnedInvalidHex.clear();
+      warnCount = 0;
+    }
+    if (!warnedInvalidHex.has(hex)) {
       warnedInvalidHex.add(hex);
-      console.warn(`[color] hexToRgb 收到非法输入 "${hex}"，已按黑色处理`);
+      warnCount++;
+      if (warnCount <= 20) {
+        console.warn(`[color] hexToRgb 收到非法输入 "${hex}"，已按黑色处理`);
+      }
     }
     return { r: 0, g: 0, b: 0 };
   }
