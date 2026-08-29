@@ -4,31 +4,31 @@
 
 ## 功能总览
 
-### 主题编辑器（M1/M2）
+### 主题编辑器
 
 - 49 个官方主题槽位分组编辑（基础色 / diff / markdown / 语法高亮），支持深浅双模式
 - 实时 TUI 预览（对话、diff、markdown 渲染模拟）
 - 基于 [官方 theme.json schema](https://opencode.ai/docs/themes/) 的 Ajv 校验，保存即写入 `~/.config/opencode/themes/`
-- 一键应用（写入 `tui.json` 的 `theme` 字段）、DesktopTheme 桌面主题导出（过官方 schema）
+- 一键应用（写入 `tui.json` 的 `theme` 字段）、DesktopTheme 桌面主题导出（通过官方 schema 校验）
 - **主题包导入/导出**：全部主题一键打包为 zip 下载；导入时逐个过 schema 校验，同名跳过、非法忽略
 
-### 壁纸工作台（M3）
+### 壁纸工作台
 
-- 上传任意图片（前端压缩到 200px 后传输）或选用 8 张内置程序化壁纸
+- 上传图片或视频作壁纸，或选用内置图库；前端双通道压缩（1920 JPEG 壁纸 + 200px 取色样本）
 - k-means 取色 + 50 槽位自动映射，WCAG 对比度自动校正，生成完整深浅双模式主题
 - 三端输出：
   1. **TUI 主题** —— 保存 / 保存并应用
   2. **Windows Terminal 背景** —— 自动检测 Profile，写入背景图 + 亚克力 + 双不透明度，修改前强制备份、一键还原
   3. **CDP 桌面皮肤包** —— 生成 `theme.json`（accent 自动转 OKLCH）+ 背景图，可调用本地注入器
 
-### 主题市场（M4）
+### 主题市场
 
 - **官方精选**：实时列出 opencode 仓库内置的 33 个主题（tokyonight、gruvbox、dracula…），一键安装为本机副本
 - **本地预设**：内置 Liquid Glass 磨砂玻璃 / 极光两套程序生成主题，离线可用
 - **GitHub 搜索**：按 star 搜索主题仓库，扫描仓库内合法主题文件自动安装（多主题仓库自动加前缀命名）
 - **更新检查**：按内容哈希比对远程最新版，识别「本地已修改」「有更新」状态
 
-### 桌面端皮肤注入（M6）
+### 桌面端皮肤注入
 
 - 内置 CDP 注入器，无需外部仓库：自动探测 OpenCode Desktop 安装路径，一键带调试端口启动（可选先退出旧实例）
 - **常驻皮肤引擎**（架构参考社区项目 [opencodedev-skin](https://github.com/wpz1212ccl/opencodedev-skin)，MIT）：
@@ -68,17 +68,17 @@ CI（GitHub Actions）在每次 push/PR 时自动跑 lint、tsc、单元测试�
 
 ## 数据位置
 
-| 内容            | 路径                                             |
-| --------------- | ------------------------------------------------ |
-| TUI 主题        | `~/.config/opencode/themes/*.json`               |
-| TUI 配置        | `~/.config/opencode/tui.json`                    |
-| WT 备份         | `<WT 目录>/settings.json.ocskin-backup`          |
-| opencode 背景图 | `~/.config/opencode/backgrounds/`                |
-| 桌面端主题库    | `~/.config/opencode/oc-skin-studio/desktop-themes/`（旧版存于 %TEMP%，首次访问自动迁移） |
-| CDP 皮肤包      | `<注入器仓库>/presets/<id>/`                     |
-| 桌面端上次皮肤  | `<项目>/presets/desktop-skins/last.json`         |
-| 内置壁纸缓存    | `<项目>/presets/wallpapers/`（首次访问自动生成） |
-| 官方主题色板缓存 | `%TEMP%/oc-skin-studio/theme-colors/`（7 天 TTL，纯缓存可随时删） |
+| 内容             | 路径                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| TUI 主题         | `~/.config/opencode/themes/*.json`                                                       |
+| TUI 配置         | `~/.config/opencode/tui.json`                                                            |
+| WT 备份          | `<WT 目录>/settings.json.ocskin-backup`                                                  |
+| opencode 背景图  | `~/.config/opencode/backgrounds/`                                                        |
+| 桌面端主题库     | `~/.config/opencode/oc-skin-studio/desktop-themes/`（旧版存于 %TEMP%，首次访问自动迁移） |
+| CDP 皮肤包       | `<注入器仓库>/presets/<id>/`                                                             |
+| 桌面端上次皮肤   | `<项目>/presets/desktop-skins/last.json`                                                 |
+| 内置壁纸库       | `<项目>/presets/wallpapers/`（本地文件，含静态与动态壁纸，不随 git 分发）                |
+| 官方主题色板缓存 | `%TEMP%/oc-skin-studio/theme-colors/`（7 天 TTL，纯缓存可随时删）                        |
 
 ## 环境变量（测试/自定义用）
 
@@ -99,15 +99,19 @@ server/                 Express 后端（tsx 直跑 TS）
     paths.ts            数据目录解析（含环境变量覆盖）
     schema.ts           官方 theme.json / desktop-theme.json Ajv 校验
     color.ts            颜色空间转换与对比度
-    palette.ts          k-means 取色 + 50 槽位映射
-    png.ts/wallpapers.ts 程序化 PNG 壁纸（零依赖手写编码器）
+    palette.ts          k-means 取色 + 槽位映射
+    wallpapers.ts       内置壁纸 / 视频壁纸库
     terminal.ts         Windows Terminal 探测/JSONC 解析/备份写入
-    desktop.ts          CDP 皮肤包生成 + 注入器调用
+    desktop.ts          CDP 皮肤包生成与注入编排
+    cdp.ts              CDP 连接、脚本注入与诊断
+    desktopSkin.ts      皮肤引擎 CSS/JS 生成
+    windowFx.ts         窗口透明 / 磨砂（Win32 layered window）
     market.ts           主题市场（官方源/预设/GitHub 安装/更新检查）
   routes/               themes / images / terminal / desktop / market
 src/                    React 18 + Vite 前端
-  pages/                EditorPage / GalleryPage / MarketPage
-  lib/                  themeModel / imageClient（canvas 压缩取色）
+  pages/                EditorPage / GalleryPage / MarketPage /
+                        DesktopEditorPage / DesktopMarketPage / WallpaperWorkbenchPage
+  lib/                  themeModel / imageClient（canvas 压缩取色）/ officialMapping
 scripts/package.ps1     打包发布 zip
 ```
 
