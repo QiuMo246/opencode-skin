@@ -2,6 +2,7 @@
   "name": "opencode-skin-studio",
   "private": true,
   "version": "0.3.0",
+  "license": "MIT",
   "type": "module",
   "prettier": {
     "printWidth": 110,

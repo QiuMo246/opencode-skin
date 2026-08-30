@@ -16,6 +16,12 @@ if "%~1"=="dev" (
   goto :eof
 )
 
+if "%~1"=="tray" (
+  echo [tray] starting tray icon; it will launch/keep the service running...
+  powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\tray.ps1"
+  goto :eof
+)
+
 powershell -NoProfile -Command "try{Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 'http://127.0.0.1:5175/api/health'|Out-Null;exit 0}catch{exit 1}"
 if not errorlevel 1 (
   echo [info] service already running, opening browser...

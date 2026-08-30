@@ -1,3 +1,7 @@
+/* 本文件的注入 CSS 选择器体系与基础配色衍生自 opencodedev-skin（MIT License）：
+ * https://github.com/wpz1212ccl/opencodedev-skin （windows/assets/dream-skin.css）。
+ * 在其基础上大幅改写：由配置动态生成、深浅双模式、强调色混色、--v2-* 官方 token 覆盖。
+ * 依 MIT 协议保留本声明。 */
 export type SkinApplyParams = {
   imageDataUrl?: string;
   videoUrl?: string;

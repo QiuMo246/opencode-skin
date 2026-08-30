@@ -53,7 +53,26 @@ npm start          :: 服务 http://127.0.0.1:5175，同时托管前端 dist
 
 :: 方式三：开发模式（前端 Vite 热更新 :5173 + 后端 tsx watch）
 npm run dev
+
+:: 方式四：托盘模式（系统托盘常驻，自动拉起并守护服务）
+start.bat tray
 ```
+
+### 系统托盘与开机自启
+
+```powershell
+:: 常驻托盘：图标随服务状态变色（青=运行中 / 红=未响应），服务掉线自动拉起，
+:: 菜单支持打开工作台、启动/停止服务、开机自启开关、退出
+start.bat tray
+:: 或：powershell -NoProfile -ExecutionPolicy Bypass -File scripts\tray.ps1
+
+:: 开机自启：写 HKCU Run 键，登录后由托盘静默启动并守护服务
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\setup-autostart.ps1 -Enable   :: 开启
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\setup-autostart.ps1 -Disable  :: 关闭
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\setup-autostart.ps1           :: 查看状态
+```
+
+自启也可在托盘菜单勾选「开机自启」；开启后可在任务管理器 →「启动应用」中随时开关。
 
 ## 开发与质量
 
@@ -120,6 +139,8 @@ tests/                  Vitest 单元测试
 e2e/                    Playwright E2E 冒烟（配置同目录）
 docs/DESIGN.md          设计文档
 scripts/package.ps1     打包发布 zip
+scripts/tray.ps1        系统托盘（服务守护 / 状态图标 / 快捷菜单）
+scripts/setup-autostart.ps1   开机自启开关（HKCU Run 键）
 ```
 
 ## 打包发布
@@ -135,6 +156,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package.ps1
 - 应用或修改主题后需**重启 opencode** 才会生效（TUI 启动时读取主题）
 - Windows Terminal 写入前会自动备份原 settings.json，可在工作台一键还原
 - GitHub 相关功能依赖网络；未检测到 Windows Terminal / 注入器时对应面板自动置灰降级
+- 托盘「退出」只停掉它自己拉起的服务；外部启动的服务（npm start / dev）不受影响，需手动停止
 
 ## License
 
