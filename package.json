@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.3.0",
   "type": "module",
+  "prettier": {
+    "printWidth": 110,
+    "singleQuote": false,
+    "trailingComma": "all",
+    "semi": true
+  },
   "scripts": {
     "dev": "concurrently -k -n server,web \"npm:dev:server\" \"npm:dev:web\"",
     "dev:server": "tsx watch server/index.ts",
@@ -10,7 +16,7 @@
     "build": "tsc --noEmit && vite build",
     "start": "tsx server/index.ts",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --config e2e/playwright.config.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },

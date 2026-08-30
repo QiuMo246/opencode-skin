@@ -94,6 +94,10 @@ CI（GitHub Actions）在每次 push/PR 时自动跑 lint、tsc、单元测试�
 ## 项目结构
 
 ```
+index.html / vite.config.ts   前端入口与构建配置（Vitest 配置同在此文件）
+tsconfig.json / eslint.config.js   类型检查与 Lint（Prettier 配置内嵌 package.json）
+start.bat               一键启动（自动装依赖、构建、起服务）
+
 server/                 Express 后端（tsx 直跑 TS）
   lib/                  核心逻辑
     paths.ts            数据目录解析（含环境变量覆盖）
@@ -112,6 +116,9 @@ src/                    React 18 + Vite 前端
   pages/                EditorPage / GalleryPage / MarketPage /
                         DesktopEditorPage / DesktopMarketPage / WallpaperWorkbenchPage
   lib/                  themeModel / imageClient（canvas 压缩取色）/ officialMapping
+tests/                  Vitest 单元测试
+e2e/                    Playwright E2E 冒烟（配置同目录）
+docs/DESIGN.md          设计文档
 scripts/package.ps1     打包发布 zip
 ```
 

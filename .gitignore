@@ -11,7 +11,8 @@ presets/wallpapers/videos/*
 test-results/
 playwright-report/
 
-# 开发过程产物（评审截图 / 临时脚本 / 本地参考资料）
+# 开发过程产物（评审截图 / 临时脚本 / 本地参考资料 / 会话状态）
 .impeccable/
 .tmp-*/
 docs/reference/
+.zcode/

@@ -5,7 +5,8 @@ import { defineConfig } from "@playwright/test";
 const PORT = Number(process.env.PORT ?? 5199);
 
 export default defineConfig({
-  testDir: "./e2e",
+  // 配置文件位于 e2e/ 内，testDir 相对配置文件解析
+  testDir: ".",
   timeout: 60_000,
   fullyParallel: false,
   workers: 1,
@@ -15,7 +16,8 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   webServer: {
-    command: "npx tsx server/index.ts",
+    // webServer 的 cwd 是配置文件所在目录（e2e/），故用 ../ 指向仓库根
+    command: "npx tsx ../server/index.ts",
     port: PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
